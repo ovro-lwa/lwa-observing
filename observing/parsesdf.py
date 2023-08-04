@@ -1,117 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jun  5 09:59:15 2023
-
-@author: idavis
-"""
-
-from astropy.time import Time
-import warnings
-from enum import Enum
 import pandas as pd
-
-class ObsType(Enum):
-    volt = 'VOLT'
-    power = 'POWER'
-    fast = 'FAST'
-
-class Session:
-    """
-    Contains information about the controller settings for the session 
-    """
-    def __init__(self, obs_type, session_id, config_file = None, cal_directory = None, do_cal = True,beam_num = None):
-        """
-        
-        :param obs_type: defines whether the session will be for a power beam, voltage beam, or fast vis
-        :type obs_type: str
-        :param config_file: path to the configuration file, defaults to '/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml'
-        :type config_file: str, optional
-        :param cal_directory: path to the calibration directory. If None, then it is set as the calibration directory defined in the configuration file, defaults to None
-        :type cal_directory: str, optional
-        :param do_cal: If doing a beam observation, it defines whether to calibrate the beam at the beginning of the session, defaults to True
-        :type do_cal: bool, optional
-        :param beam_num: if doing a beam observation, this defines which beam to use, defaults to None
-        :type beam_num: int, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        self.session_id = session_id
-        self.obs_type = ObsType(obs_type)
-        if config_file is None:
-            self.config_file = '/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml'
-        elif config_file is not None:
-            self.config_file = config_file
-        self.cal_directory = cal_directory
-        self.beam_num = beam_num
-        self.do_cal = bool(do_cal)
-        self.__validate()
-        return
-    
-    def __validate(self):
-        if self.beam_num is not None:
-            self.beam_num = int(self.beam_num)
-            
-        valid_beam_nums = range(1,17)
-        if (self.obs_type is ObsType.power or self.obs_type is ObsType.volt) and self.beam_num not in valid_beam_nums:
-            raise Exception("You must specify a valid beam number if you want to observe with a beam")
-        return
-
-
-class Observation:
-    def __init__(self, session:Session, obs_id, obs_start_mjd,obs_start_mpm, obs_dur, obs_mode):
-        self.session = session
-        self.obs_id = obs_id
-        self.obs_start_mjd = obs_start_mjd
-        self.obs_start_mpm = obs_start_mpm
-        self.obs_start = obs_start_mjd + obs_start_mpm/1e3/3600/24
-        self.obs_dur = obs_dur
-        assert(self.obs_dur > 0),'Duration cannot be negative'
-        self.obs_mode = obs_mode
-        return
-    
-    def set_beam_props(self,ra, dec = None, obj_name =None,int_time = None):
-        # Check if the observing mode is one of the tracking modes:
-        tracking_modes = ['TRK_RADEC','TRK_SOL', 'TRK_JOV','TRK_LUN']
-        if self.obs_mode in tracking_modes:
-            self.tracking = True
-
-        # If the observing mode isn't one of the tracking modes, then set tracking to False
-        elif self.obs_mode not in tracking_modes:
-            self.tracking = False
-        
-        # Setting ra and dec values if the system isn't using one of the modes that require ephemerides: 
-        ephem_modes = tracking_modes[1:]
-        
-        if self.obs_mode not in ephem_modes:
-            # If the dec is None, then assume that the user wants to resolve to a target based on its name
-            if dec is None and self.obs_mode:
-                assert(obj_name is not None)
-                self.obj_name = obj_name
-                self.ra = None
-                self.dec = None
-            elif dec is not None:
-                self.ra = float(ra)
-                self.dec = float(dec)
-                self.obj_name = obj_name
-
-        elif self.obs_mode in ephem_modes:
-            self.ra = None
-            self.dec = None
-            if self.obs_mode == 'TRK_SOL':
-                self.obj_name = 'Sun'
-            if self.obs_mode == 'TRK_JOV':
-                self.obj_name = 'Jupiter'
-            if self.obs_mode == 'TRK_LUN':
-                self.obj_name = 'Moon'
-
-        # Set integration time of the beam. If none, the default is 1ms:            
-        if int_time is not None:
-            self.int_time = int(int_time)
-        elif int_time is None:
-            self.int_time = 1
-        return
+from observing.classes import ObsType, Session, Observation
 
 
 def sdf_to_dict(filename:str):
@@ -233,22 +121,6 @@ def make_obs_list(inp:dict):
     return session,obs_list
 
 
-def main(sdf_fn):
-    d = sdf_to_dict(sdf_fn)
-    session, obs_list = make_obs_list(d)
-    tn = Time.now().mjd
-    t0 = obs_list[0].obs_start
-    assert(t0 > tn),"The observations take place in the past"
-    if session.obs_type is ObsType.power:
-        df = power_beam_obs(obs_list,session)
-    if session.obs_type is ObsType.volt:
-        df = volt_beam_obs(obs_list,session)
-    if session.obs_type is ObsType.fast:
-        df = fast_vis_obs(obs_list,session)
-        pass
-    return df
-
-
 def fast_vis_obs(obs_list, session, buffer = 20):
     start = obs_list[0].obs_start
     ts = obs.obs_start - buffer/3600/24 #do the control command  before the start of the first observation
@@ -266,6 +138,7 @@ def fast_vis_obs(obs_list, session, buffer = 20):
     df = df.transpose()
     df.insert(1,column = 'session_id',value = session.session_id)
     return df
+
 
 def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 20, cal_buffer = 600, pointing_buffer = 10,recording_buffer = 5):
 
@@ -310,6 +183,7 @@ def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 2
     df = df.transpose()
     df.insert(1,column = 'session_id',value = session.session_id)
     return df
+
 
 def volt_beam_obs(obs):
     return
