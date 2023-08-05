@@ -179,7 +179,7 @@ def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 2
         d.update({ts:cmd})
 
         cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time},t0 = {obs.obs_start})"
-        ts += pointing_buffer + pointing_buffer/24/3600
+        ts += (pointing_buffer + pointing_buffer)/24/3600
         d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])
