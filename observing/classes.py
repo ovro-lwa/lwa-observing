@@ -49,12 +49,12 @@ class Session:
 
 
 class Observation:
-    def __init__(self, session:Session, obs_id, obs_start_mjd,obs_start_mpm, obs_dur, obs_mode):
+    def __init__(self, session:Session, obs_id, obs_start, obs_dur, obs_mode):
         self.session = session
         self.obs_id = obs_id
-        self.obs_start_mjd = obs_start_mjd
-        self.obs_start_mpm = obs_start_mpm
-        self.obs_start = obs_start_mjd + obs_start_mpm/1e3/3600/24
+        self.obs_start = obs_start
+        self.obs_start_mjd = int(obs_start)
+        self.obs_start_mpm = (obs_start - int(obs_start)) * 24*3600*1e3
         self.obs_dur = obs_dur
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode

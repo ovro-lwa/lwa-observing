@@ -1,6 +1,7 @@
 import pandas as pd
 import warnings
 from observing.classes import ObsType, Session, Observation
+from astropy.time import Time
 
 
 def sdf_to_dict(filename:str):
@@ -87,10 +88,11 @@ def make_obs_list(inp:dict):
     for i in inp['OBSERVATIONS']:
         obs_id = int(inp['OBSERVATIONS'][i]['OBS_ID'])
         obs_dur = int(inp['OBSERVATIONS'][i]['OBS_DUR'])
-        obs_start_mjd = int(inp['OBSERVATIONS'][i]['OBS_START_MJD'])
-        obs_start_mpm = int(inp['OBSERVATIONS'][i]['OBS_START_MPM'])
+        oo = inp['OBSERVATIONS'][i]['OBS_START']
+        tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
+        obs_start = Time(tt, format='iso').mjd
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
-        obs = Observation(session, obs_id, obs_start_mjd, obs_start_mpm, obs_dur, obs_mode)
+        obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
         try:
             if obs_list[-1].obs_start > obs.obs_start:
                 raise Exception('Current observation starts before previous observation')
@@ -163,7 +165,7 @@ def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 2
 
     # Configure for the beam
     ts += controller_buffer/24/3600 
-    cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibrate_beams = {session.do_cal})"
+    cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {session.do_cal})"
     d.update({ts:cmd})
     ts += (configure_buffer + cal_buffer)/24/3600
 
@@ -173,7 +175,7 @@ def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 2
         if obs.dec is None:
             cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking})"
         elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, ra = {obs.ra}, dec = {obs.dec}, track={obs.tracking})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking})"
         d.update({ts:cmd})
 
         cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time},t0 = {obs.obs_start})"
