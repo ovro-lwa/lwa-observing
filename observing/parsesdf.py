@@ -4,7 +4,11 @@ from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
 
 
-def make_sched(sdf_fn):
+def make_sched(sdf_fn, mode='buffer'):
+    """ Use SDF to create a schedule dataframe.
+    mode can be 'buffer' (sets up before running at scheduled time) or 'asap' (runs sequence of commands immediately)
+    """
+
     d = sdf_to_dict(sdf_fn)
     session, obs_list = make_obs_list(d)
 
@@ -12,7 +16,7 @@ def make_sched(sdf_fn):
     t0 = obs_list[0].obs_start
 
     if session.obs_type is ObsType.power:
-        sched = power_beam_obs(obs_list, session)
+        sched = power_beam_obs(obs_list, session, mode=mode)
     if session.obs_type is ObsType.volt:
         sched = volt_beam_obs(obs_list, session)
     if session.obs_type is ObsType.fast:
@@ -144,7 +148,10 @@ def make_obs_list(inp:dict):
     return session,obs_list
 
 
-def fast_vis_obs(obs_list, session, buffer = 20):
+def fast_vis_obs(obs_list, session, buffer=None):
+    if buffer is None:
+        buffer = 20
+
     start = obs_list[0].obs_start
     ts = obs.obs_start - buffer/3600/24 #do the control command  before the start of the first observation
     cmd = f"con = control.Controller({session.config_file})"
@@ -163,7 +170,19 @@ def fast_vis_obs(obs_list, session, buffer = 20):
     return df
 
 
-def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 20, cal_buffer = 60, pointing_buffer = 10, recording_buffer = 5):
+def power_beam_obs(obs_list, session, mode='buffer'):
+    if mode == 'buffer':
+        controller_buffer = 20
+        configure_buffer = 20
+        cal_buffer = 60
+        pointing_buffer = 10
+        recording_buffer = 5
+    elif mode == 'asap':
+        controller_buffer = 0.1
+        configure_buffer = 0.1
+        cal_buffer = 0.1
+        pointing_buffer = 0.1
+        recording_buffer = 0.1
 
     if session.do_cal:
         dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24

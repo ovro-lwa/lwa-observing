@@ -37,26 +37,27 @@ def sched_update(sched):
 
 
 def submit_next(sched, pool):
-    """ Waits for mjd and submits the schedule row to the pool
+    """ Waits for mjd and submits the session rows to the pool
     """
     # alternatively, make sessions into a sequence with one start time
 
     row = sched.iloc[0]
     mjd = row.name
     if mjd - Time.now().mjd < 1/(24*3600):
-        fut = pool.submit(runrow, row)
-        sched.drop(index=sched.index[0], axis=0, inplace=True)
+        rows = sched[sched.session_id == row.session_id]
+        fut = pool.submit(runrow, rows)
+        sched.drop(index=rows.index, axis=0, inplace=True)
         return fut
     else:
         return None
 
 
-def runrow(row):
+def runrow(rows):
     """ Runs a command from the schedule
     """
 
-    exec(row.command)
-    return row.command
+    for mjd, row in rows.iterrows():
+        exec(row.command)
 
 
 ls = dsa_store.DsaStore()
@@ -65,7 +66,7 @@ def sched_callback():
     def a(event):
         global sched0
         if os.path.exists(event):
-            sched = make_sched(event)
+            sched = make_sched(event, mode='asap')
             sched0 = sched_update([sched0, sched])
         else:
             print(f"File {event} does not exist. Not updating schedule.")
@@ -77,47 +78,49 @@ if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
+    pool = ProcessPoolExecutor(max_workers = 1)
+
     if len(sys.argv) == 2:
         print(f"Initializing schedule with {sys.argv[1]}")
         sched0 = make_sched(sys.argv[1])
 
     futures = []
     nextmjd = 0
-    with ProcessPoolExecutor(max_workers=8) as pool:
-        while True:
-            try:
+    while True:
+        try:
+            if len(sched0):
+                print(sched0)
+                fut = submit_next(sched0, pool)    # when time comes, fire and forget
+                if fut is not None:
+                    futures.append(fut)
+                    print(f"Submitted one. {len(futures)} futures")
                 if len(sched0):
-                    fut = submit_next(sched0, pool)    # when time comes, fire and forget
-                    if fut is not None:
-                        futures.append(fut)
-                        print(f"Submitted one. {len(futures)} futures")
-                    if len(sched0):
-                        if sched0.iloc[0].name != nextmjd:
-                            nextmjd = sched0.iloc[0].name
-                            print(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
-                    else:
-                        print("Schedule contains 0 commands.")
+                    if sched0.iloc[0].name != nextmjd:
+                        nextmjd = sched0.iloc[0].name
+                        print(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
+                else:
+                    print("Schedule contains 0 commands.")
 
-                # clean up futures
-                for fut in futures:
-                    if fut.done():
-                        print(f"Completed command: {fut.result()}")
-                    elif fut.cancelled():
-                        print(f"Cancelled command: {fut.result()}")
-                futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
-                sleep(0.49)  # at least two per second
+            # clean up futures
+            for fut in futures:
+                if fut.done():
+                    print(f"Completed command: {fut.result()}")
+                elif fut.cancelled():
+                    print(f"Cancelled command: {fut.result()}")
+            futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
+            sleep(0.49)  # at least two per second
+        except KeyboardInterrupt:
+            print("Interrupting execution of schedule. Waiting on submissions (Ctrl-C again to interrupt)...")
+            try:
+                for fut in as_completed(futures):
+                    print(f"Completed command: {fut.result()}")
             except KeyboardInterrupt:
-                print("Interrupting execution of schedule. Waiting on submissions (Ctrl-C again to interrupt)...")
-                try:
-                    for fut in as_completed(futures):
-                        print(f"Completed command: {fut.result()}")
-                except KeyboardInterrupt:
-                    print(f"Interrupting again. Cancelling {len(futures)} submissions...")
-                    for fut in futures:
-                        res = fut.cancel()
-                        if not res:
-                            print("\tCould not cancel a submission...")
-                break
+                print(f"Interrupting again. Cancelling {len(futures)} submissions...")
+                for fut in futures:
+                    res = fut.cancel()
+                    if not res:
+                        print("\tCould not cancel a submission...")
+            break
             
-            if len(sched0) or len(futures):
-                print(f'{len(sched0)}, {len(futures)}')
+        if len(sched0) or len(futures):
+            print(f'{len(sched0)}, {len(futures)}')

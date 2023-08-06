@@ -10,6 +10,7 @@ def cli():
 
 @cli.command()
 @click.argument('sdffile')
+#@click.option('--asap', is_flag=True, default=False, show_default=True)
 def submit_sdf(sdffile):
     """
     """
