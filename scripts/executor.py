@@ -89,6 +89,7 @@ if __name__ == "__main__":
                     fut = submit_next(sched0, pool)    # when time comes, fire and forget
                     if fut is not None:
                         futures.append(fut)
+                        print(f"Submitted one. {len(futures)} futures")
                     if len(sched0):
                         if sched0.iloc[0].name != nextmjd:
                             nextmjd = sched0.iloc[0].name

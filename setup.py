@@ -13,6 +13,6 @@ setup(name='lwa-observing',
       packages=['observing'],
       entry_points='''
         [console_scripts]
-        lwaobservingt=observing.cli:cli
+        lwaobserving=observing.cli:cli
       ''',
-      zip_safe=False))
+      zip_safe=False)
