@@ -15,6 +15,7 @@ from pandas import concat, DataFrame
 from astropy.time import Time
 from observing.parsesdf import make_sched
 from dsautils import dsa_store
+from mnc import control
 
 
 def sched_update(sched):
@@ -29,7 +30,7 @@ def sched_update(sched):
         
     sched.sort_index(inplace=True)
     n_old = sum(sched.index < Time.now().mjd)
-    sched = sched[sched.index > Time.now().mjd]
+    sched = sched[sched.index > Time.now().mjd - 120/(24*3600)]  # submit within last 2 min
     print(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} old commands).")
 
     return sched
@@ -96,6 +97,15 @@ if __name__ == "__main__":
                             print(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
                     else:
                         print("Schedule contains 0 commands.")
+
+                # clean up futures
+                for fut in futures:
+                    if fut.done():
+                        print(f"Completed command: {fut.result()}")
+                    elif fut.cancelled():
+                        print(f"Cancelled command: {fut.result()}")
+                futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
+                sleep(0.49)  # at least two per second
             except KeyboardInterrupt:
                 print("Interrupting execution of schedule. Waiting on submissions (Ctrl-C again to interrupt)...")
                 try:
@@ -108,12 +118,6 @@ if __name__ == "__main__":
                         if not res:
                             print("\tCould not cancel a submission...")
                 break
-
-            # clean up futures
-            for fut in futures:
-                if fut.done():
-                    print(f"Completed command: {fut.result()}")
-                elif fut.cancelled():
-                    print(f"Cancelled command: {fut.result()}")
-            futures = [fut for fut in futures if fut.done() or fut.cancelled()]
-            sleep(0.49)  # at least two per second
+            
+            if len(sched0) or len(futures):
+                print(f'{len(sched0)}, {len(futures)}')

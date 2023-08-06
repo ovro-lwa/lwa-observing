@@ -163,7 +163,7 @@ def fast_vis_obs(obs_list, session, buffer = 20):
     return df
 
 
-def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 20, cal_buffer = 600, pointing_buffer = 10,recording_buffer = 5):
+def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 20, cal_buffer = 60, pointing_buffer = 10, recording_buffer = 5):
 
     if session.do_cal:
         dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
