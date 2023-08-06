@@ -4,6 +4,26 @@ from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
 
 
+def make_sched(sdf_fn):
+    d = sdf_to_dict(sdf_fn)
+    session, obs_list = make_obs_list(d)
+
+    tn = Time.now().mjd
+    t0 = obs_list[0].obs_start
+
+    if session.obs_type is ObsType.power:
+        sched = power_beam_obs(obs_list, session)
+    if session.obs_type is ObsType.volt:
+        sched = volt_beam_obs(obs_list, session)
+    if session.obs_type is ObsType.fast:
+        sched = fast_vis_obs(obs_list, session)
+        pass
+
+    print(f"Parsed {sdf_fn} into {len(sched)} submissions.")
+
+    return sched
+
+
 def sdf_to_dict(filename:str):
     """
     

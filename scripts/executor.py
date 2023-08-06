@@ -6,36 +6,15 @@ Created on Mon Jun  5 09:59:15 2023
 @author: idavis
 """
 
+import os.path
 import sys
 from time import sleep
 from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
-from observing.classes import ObsType
-from observing import parsesdf
-from mnc import control
+from observing.parsesdf import make_sched
 from dsautils import dsa_store
-
-
-def make_sched(sdf_fn):
-    d = parsesdf.sdf_to_dict(sdf_fn)
-    session, obs_list = parsesdf.make_obs_list(d)
-
-    tn = Time.now().mjd
-    t0 = obs_list[0].obs_start
-
-    if session.obs_type is ObsType.power:
-        sched = parsesdf.power_beam_obs(obs_list, session)
-    if session.obs_type is ObsType.volt:
-        sched = parsesdf.volt_beam_obs(obs_list, session)
-    if session.obs_type is ObsType.fast:
-        sched = parsesdf.fast_vis_obs(obs_list, session)
-        pass
-
-    print(f"Parsed {sdf_fn} into {len(sched)} submissions.")
-
-    return sched
 
 
 def sched_update(sched):
@@ -43,13 +22,15 @@ def sched_update(sched):
     Will either merge input list of scheds or get new sched from etcd set.
     """
 
+    # TODO: remove duplicates
+
     if isinstance(sched, list):
-        print('concat sched list')
         sched = concat(sched)
         
     sched.sort_index(inplace=True)
+    n_old = sum(sched.index < Time.now().mjd)
     sched = sched[sched.index > Time.now().mjd]
-    print(f"Updated sched to {len(sched)} sorted submissions.")
+    print(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} old commands).")
 
     return sched
 
@@ -61,20 +42,19 @@ def submit_next(sched, pool):
 
     row = sched.iloc[0]
     mjd = row.name
-    if Time.now().mjd - mjd < 1/(24*3600):
+    if mjd - Time.now().mjd < 1/(24*3600):
         fut = pool.submit(runrow, row)
+        sched.drop(index=sched.index[0], axis=0, inplace=True)
         return fut
-#        sleepmjd = mjd - Time.now().mjd
-#        print(f"Waiting {sleepmjd*24*3600} seconds to run command ({row.command})...")
-#        sleep(sleepmjd*24*3600)
+    else:
+        return None
 
 
 def runrow(row):
     """ Runs a command from the schedule
     """
 
-#    exec(row.command)
-    sleep(5)
+    exec(row.command)
     return row.command
 
 
@@ -83,8 +63,11 @@ sched0 = DataFrame([])
 def sched_callback():
     def a(event):
         global sched0
-        sched = make_sched(event)
-        sched0 = sched_update([sched0, sched])
+        if os.path.exists(event):
+            sched = make_sched(event)
+            sched0 = sched_update([sched0, sched])
+        else:
+            print(f"File {event} does not exist. Not updating schedule.")
     return a
 ls.add_watch('/cmd/observing/sdfname', sched_callback())
 
@@ -93,7 +76,8 @@ if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) == 2:
+        print(f"Initializing schedule with {sys.argv[1]}")
         sched0 = make_sched(sys.argv[1])
 
     futures = []
@@ -102,16 +86,20 @@ if __name__ == "__main__":
         while True:
             try:
                 if len(sched0):
-                    fut = submit_next(sched0, pool)    # fire and forget
-                    futures.append(fut)
-                    if sched0.iloc[0].name > nextmjd:
-                        nextmjd = sched0.iloc[0].name
-                        print(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
+                    fut = submit_next(sched0, pool)    # when time comes, fire and forget
+                    if fut is not None:
+                        futures.append(fut)
+                    if len(sched0):
+                        if sched0.iloc[0].name != nextmjd:
+                            nextmjd = sched0.iloc[0].name
+                            print(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
+                    else:
+                        print("Schedule contains 0 commands.")
             except KeyboardInterrupt:
                 print("Interrupting execution of schedule. Waiting on submissions (Ctrl-C again to interrupt)...")
                 try:
                     for fut in as_completed(futures):
-                        print(fut.result())
+                        print(f"Completed command: {fut.result()}")
                 except KeyboardInterrupt:
                     print(f"Interrupting again. Cancelling {len(futures)} submissions...")
                     for fut in futures:
@@ -121,5 +109,10 @@ if __name__ == "__main__":
                 break
 
             # clean up futures
+            for fut in futures:
+                if fut.done():
+                    print(f"Completed command: {fut.result()}")
+                elif fut.cancelled():
+                    print(f"Cancelled command: {fut.result()}")
             futures = [fut for fut in futures if fut.done() or fut.cancelled()]
             sleep(0.49)  # at least two per second
