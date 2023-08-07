@@ -103,11 +103,11 @@ if __name__ == "__main__":
                     print("Schedule contains 0 commands.")
 
             # clean up futures
-            for fut in futures:
-                if fut.done():
-                    print(f"Completed command: {fut.result()}")
-                elif fut.cancelled():
-                    print(f"Cancelled command: {fut.result()}")
+#            for fut in futures:
+#                if fut.done():
+#                    print(f"Completed command: {fut.result()}")
+#                elif fut.cancelled():
+#                    print(f"Cancelled command: {fut.result()}")
             futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
             sleep(0.49)  # at least two per second
         except KeyboardInterrupt:

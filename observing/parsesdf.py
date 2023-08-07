@@ -174,7 +174,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 60
+        cal_buffer = 180
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
