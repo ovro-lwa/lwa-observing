@@ -89,6 +89,7 @@ if __name__ == "__main__":
     nextmjd = 0
     lsched0 = len(sched0)
     lfutures = len(futures)
+    schedule.put_sched(sched0)  # TODO: do we initialize each time or try to save all schedule in etcd?
 
     while True:
         try:
@@ -126,7 +127,7 @@ if __name__ == "__main__":
             break
             
         if len(sched0) != lsched0 or len(futures) != lfutures:
-            if len(sched0) != lsched0):
+            if len(sched0) != lsched0:
                 schedule.put_sched(sched0)
             lsched0 = len(sched0)
             lfutures = len(futures)
