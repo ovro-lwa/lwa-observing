@@ -66,7 +66,7 @@ def sched_callback():
     def a(event):
         global sched0
         if os.path.exists(event):
-            sched = make_sched(event, mode='asap')
+            sched = make_sched(event, mode='buffer')
             sched0 = sched_update([sched0, sched])
         else:
             print(f"File {event} does not exist. Not updating schedule.")
@@ -86,10 +86,11 @@ if __name__ == "__main__":
 
     futures = []
     nextmjd = 0
+    lsched0 = len(sched0)
+    lfutures = len(futures)
     while True:
         try:
             if len(sched0):
-                print(sched0)
                 fut = submit_next(sched0, pool)    # when time comes, fire and forget
                 if fut is not None:
                     futures.append(fut)
@@ -122,5 +123,8 @@ if __name__ == "__main__":
                         print("\tCould not cancel a submission...")
             break
             
-        if len(sched0) or len(futures):
-            print(f'{len(sched0)}, {len(futures)}')
+        if len(sched0) != lsched0 or len(futures) != lfutures:
+            lsched0 = len(sched0)
+            lfutures = len(futures)
+            print(f'Change to length of schedule or futures: {len(sched0)}, {len(futures)}')
+            print('Current schedule:', sched0)
