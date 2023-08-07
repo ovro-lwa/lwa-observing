@@ -157,6 +157,11 @@ def fast_vis_obs(obs_list, session, buffer=None):
     cmd = f"con = control.Controller({session.config_file})"
     d = {ts:cmd}
 
+    # handy name 
+    session_mode_name = f"{session.session_id}_{session.obs_type.value}"
+    if session.beam_num is not None:
+        session_mode_name += f"{session.beam_num}"
+
     con.configure_xengine(['drvf'])
     for obs in obs_list:
         end = obs.obs_start + duration/24/3600/1e3
@@ -166,7 +171,8 @@ def fast_vis_obs(obs_list, session, buffer=None):
         d.update({end:cmd})
     df = pd.DataFrame(d,index = ['command'])
     df = df.transpose()
-    df.insert(1,column = 'session_id',value = session.session_id)
+    df.insert(1, column='session_id', value=session.session_id)
+    df.insert(1, column='session_mode_name', value=session_mode_name)
     return df
 
 
@@ -189,6 +195,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     elif not session.do_cal:
         cal_buffer = 0
         dt = (controller_buffer + configure_buffer + pointing_buffer)/3600/24
+
+    # handy name 
+    session_mode_name = f"{session.session_id}_{session.obs_type.value}"
+    if session.beam_num is not None:
+        session_mode_name += f"{session.beam_num}"
 
     t0 = obs_list[0].obs_start
     ts = t0 - dt
@@ -223,10 +234,14 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
     df = pd.DataFrame(d, index = ['command'])
     df = df.transpose()
-    df.insert(1,column = 'session_id',value = session.session_id)
+    df.insert(1, column='session_id',value=session.session_id)
+    df.insert(1, column='session_mode_name', value=session_mode_name)
     return df
 
 
-def volt_beam_obs(obs):
-    return
+def volt_beam_obs(obs, session):
 
+    # handy name 
+    session_mode_name = f"{session.session_id}_{session.obs_type.value}"
+    if session.beam_num is not None:
+        session_mode_name += f"{session.beam_num}"
