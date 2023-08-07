@@ -13,7 +13,7 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
-from observing.parsesdf import make_sched
+from observing import parsesdf, schedule
 from dsautils import dsa_store
 from mnc import control
 
@@ -66,7 +66,7 @@ def sched_callback():
     def a(event):
         global sched0
         if os.path.exists(event):
-            sched = make_sched(event, mode='buffer')
+            sched = parsesdf.make_sched(event, mode='buffer')
             sched0 = sched_update([sched0, sched])
         else:
             print(f"File {event} does not exist. Not updating schedule.")
@@ -82,12 +82,14 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 2:
         print(f"Initializing schedule with {sys.argv[1]}")
-        sched0 = make_sched(sys.argv[1])
+        sched0 = parsesdf.make_sched(sys.argv[1])
 
+    # initialize
     futures = []
     nextmjd = 0
     lsched0 = len(sched0)
     lfutures = len(futures)
+
     while True:
         try:
             if len(sched0):
@@ -124,7 +126,10 @@ if __name__ == "__main__":
             break
             
         if len(sched0) != lsched0 or len(futures) != lfutures:
+            if len(sched0) != lsched0):
+                schedule.put_sched(sched0)
             lsched0 = len(sched0)
             lfutures = len(futures)
             print(f'Change to length of schedule or futures: {len(sched0)}, {len(futures)}')
-            print('Current schedule:', sched0)
+            if lsched0:
+                print('Current schedule:', sched0)
