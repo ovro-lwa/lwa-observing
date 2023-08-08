@@ -54,7 +54,7 @@ class Observation:
         self.obs_id = obs_id
         self.obs_start = obs_start
         self.obs_start_mjd = int(obs_start)
-        self.obs_start_mpm = (obs_start - int(obs_start)) * 24*3600*1e3
+        self.obs_start_mpm = int((obs_start - int(obs_start)) * 24*3600*1e3)
         self.obs_dur = obs_dur
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode
