@@ -1,0 +1,40 @@
+PI_ID            99
+PI_NAME          Dowell, Jayce
+
+PROJECT_ID       COMJD
+PROJECT_TITLE    Commissioning data
+PROJECT_REMPI    None provided
+PROJECT_REMPO    None
+
+SESSION_ID       1
+SESSION_TITLE    REASON dry run
+SESSION_REMPI    None provided
+SESSION_REMPO    Requested data return method is USB Harddrives
+SESSION_DRX_BEAM 1
+SESSION_MODE	 VOLT
+
+OBS_ID           1
+OBS_TITLE        stps-1
+OBS_TARGET       azalt-1
+OBS_REMPI        None provided
+OBS_REMPO        Estimated data volume for this observation is 3.38 GB
+OBS_START_MJD    60059
+OBS_START_MPM    0
+OBS_START        UTC 2023/04/25 00:00:00.000000
+OBS_DUR          3600000
+OBS_DUR+         1:00:00.000
+OBS_MODE         STEPPED
+OBS_BW           1
+OBS_BW+          250.000 kHz
+OBS_STP_N        1
+OBS_STP_RADEC    0
+OBS_STP_C1[1]      0.000000000
+OBS_STP_C2[1]      +90.000000000
+OBS_STP_T[1]       3600000
+OBS_STP_FREQ1[1]   1314785907
+OBS_STP_FREQ1+[1]  60.000000003 MHz
+OBS_STP_FREQ2[1]   1336699005
+OBS_STP_FREQ2+[1]  60.999999982 MHz
+OBS_STP_B[1]       SIMPLE
+OBS_DRX_GAIN     2
+
