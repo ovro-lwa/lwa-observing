@@ -149,6 +149,9 @@ def make_obs_list(inp:dict):
 
 
 def fast_vis_obs(obs_list, session, buffer=None):
+    """ Generate dataframe for fast visibility observing mode
+    """
+
     if buffer is None:
         buffer = 20
 
@@ -177,6 +180,9 @@ def fast_vis_obs(obs_list, session, buffer=None):
 
 
 def power_beam_obs(obs_list, session, mode='buffer'):
+    """ Generate dataframe for power beam observing mode
+    """
+
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
@@ -240,8 +246,68 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
 
 def volt_beam_obs(obs, session):
+    """ Generate dataframe for volteage beam observing mode
+    """
+
+    if mode == 'buffer':
+        controller_buffer = 20
+        configure_buffer = 20
+        cal_buffer = 180
+        pointing_buffer = 10
+        recording_buffer = 5
+    elif mode == 'asap':
+        controller_buffer = 0.1
+        configure_buffer = 0.1
+        cal_buffer = 0.1
+        pointing_buffer = 0.1
+        recording_buffer = 0.1
+
+    if session.do_cal:
+        dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
+    elif not session.do_cal:
+        cal_buffer = 0
+        dt = (controller_buffer + configure_buffer + pointing_buffer)/3600/24
 
     # handy name 
     session_mode_name = f"{session.session_id}_{session.obs_type.value}"
     if session.beam_num is not None:
         session_mode_name += f"{session.beam_num}"
+
+    assert session.beam_num == 1, "voltage beamforming currently only supported on beam 1"
+
+    t0 = obs_list[0].obs_start
+    ts = t0 - dt
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d = {ts:cmd}
+    # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
+    # the scheduler. I'm deciding that should not be the perogative of the parser.
+        
+    if session.cal_directory is not None and session.do_cal == True:
+        # re-assign calibration directory if it is specified
+        cmd = f"con.conf(['xengine']['cal_directory'] = '{session.cal_directory}')"
+        d.update({ts:cmd})
+
+    # Configure for the beam
+    ts += controller_buffer/24/3600 
+    cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {session.do_cal})"
+    d.update({ts:cmd})
+    ts += (configure_buffer + cal_buffer)/24/3600
+
+    # Go through the list of observations
+    for obs in obs_list:
+        ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
+        if obs.dec is None:
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking})"
+        elif obs.dec is not None:
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking})"
+        d.update({ts:cmd})
+
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0 = {obs.obs_start})"
+        ts += (pointing_buffer + pointing_buffer)/24/3600
+        d.update({ts:cmd})
+
+    df = pd.DataFrame(d, index = ['command'])
+    df = df.transpose()
+    df.insert(1, column='session_id',value=session.session_id)
+    df.insert(1, column='session_mode_name', value=session_mode_name)
+    return df
