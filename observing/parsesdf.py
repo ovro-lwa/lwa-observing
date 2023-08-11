@@ -127,7 +127,8 @@ def make_obs_list(inp:dict):
             try:
                 ra = inp['OBSERVATIONS'][i]['OBS_RA']
             except:
-                raise Exception('Need to give RA or name of object for a beam observation')
+                warnings.warn('Need to give RA or name of object for a beam observation')
+                ra = None
             try:
                 dec = inp['OBSERVATIONS'][i]['OBS_DEC']
             except:
@@ -142,7 +143,18 @@ def make_obs_list(inp:dict):
                 obj_name = inp['OBSERVATIONS'][i]['OBS_TARGET']
             except:
                 obj_name = None
-            obs.set_beam_props(ra,dec,obj_name=obj_name,int_time= int_time)
+
+            if session.obs_type == ObsType.volt:
+                try:
+                    bw = inp['OBSERVATIONS'][i]['OBS_BW']
+                    freq1 = inp['OBSERVATIONS'][i]['OBS_STP_FREQ1[1]']
+                    freq2 = inp['OBSERVATIONS'][i]['OBS_STP_FREQ2[1]']
+                except:
+                    raise Exception('voltage observation requires defining OBS_BW, OBS_STP_FREQ1[1], and OBS_STP_FREQ2[1]')
+            else:
+                bw, freq1, freq2 = None, None, None
+
+            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2)
             
         obs_list.append(obs)
     return session,obs_list
@@ -228,14 +240,14 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     # Go through the list of observations
     for obs in obs_list:
         ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
-        if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking})"
-        elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking})"
+        cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time},t0 = {obs.obs_start})"
         d.update({ts:cmd})
 
-        cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time},t0 = {obs.obs_start})"
         ts += (pointing_buffer + pointing_buffer)/24/3600
+        if obs.dec is None:
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {' '.join(obs.obj_name)}, track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+        elif obs.dec is not None:
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {obs.obs_dur/1e3})"
         d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])
@@ -245,7 +257,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     return df
 
 
-def volt_beam_obs(obs, session):
+def volt_beam_obs(obs_list, session, mode='buffer'):
     """ Generate dataframe for volteage beam observing mode
     """
 
@@ -296,14 +308,15 @@ def volt_beam_obs(obs, session):
     # Go through the list of observations
     for obs in obs_list:
         ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
-        if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking})"
-        elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking})"
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0 = {obs.obs_start}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw})"
+        # TODO: pass in teng_f1, teng_f2, f0
         d.update({ts:cmd})
 
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0 = {obs.obs_start})"
         ts += (pointing_buffer + pointing_buffer)/24/3600
+        if obs.dec is None:
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+        elif obs.dec is not None:
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {obs.obs_dur/1e3})"
         d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])

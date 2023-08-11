@@ -128,7 +128,7 @@ if __name__ == "__main__":
             
         if len(sched0) != lsched0 or len(futures) != lfutures:
             if len(sched0) != lsched0:
-                schedule.put_sched(sched0)
+                schedule.put_sched(sched0)   # this will remove ones still being observed...
             lsched0 = len(sched0)
             lfutures = len(futures)
             print(f'Change to length of schedule or futures: {len(sched0)}, {len(futures)}')
