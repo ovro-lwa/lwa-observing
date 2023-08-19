@@ -1,0 +1,24 @@
+PI_ID            777
+PI_NAME          Casey Law
+
+PROJECT_ID       0
+SESSION_ID       777
+SESSION_MODE     POWER
+SESSION_DRX_BEAM       3
+CONFIG_FILE      /home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml
+
+OBS_ID          1
+OBS_START       UTC 2023 08 05 00:55:00
+OBS_DUR         60000
+OBS_INT_TIME    100
+OBS_DUR+        00:01:00
+OBS_MODE        POWER
+OBS_RA          0.000000000
+OBS_DEC         +90.000000000
+OBS_FREQ1       1161394218
+OBS_FREQ1+      53.000000009 MHz
+OBS_FREQ2       1599656187
+OBS_FREQ2+      73.000000010 MHz
+OBS_BW          7
+OBS_BW+         19.600 MHz
+

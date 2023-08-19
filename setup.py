@@ -11,4 +11,8 @@ setup(name='lwa-observing',
       version=version,
       url='http://github.com/ovro-lwa/lwa-observing',
       packages=['observing'],
+      entry_points='''
+        [console_scripts]
+        lwaobserving=observing.cli:cli
+      ''',
       zip_safe=False)

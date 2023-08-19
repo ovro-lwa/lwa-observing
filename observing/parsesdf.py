@@ -1,5 +1,31 @@
 import pandas as pd
+import warnings
 from observing.classes import ObsType, Session, Observation
+from astropy.time import Time
+
+
+def make_sched(sdf_fn, mode='buffer'):
+    """ Use SDF to create a schedule dataframe.
+    mode can be 'buffer' (sets up before running at scheduled time) or 'asap' (runs sequence of commands immediately)
+    """
+
+    d = sdf_to_dict(sdf_fn)
+    session, obs_list = make_obs_list(d)
+
+    tn = Time.now().mjd
+    t0 = obs_list[0].obs_start
+
+    if session.obs_type is ObsType.power:
+        sched = power_beam_obs(obs_list, session, mode=mode)
+    if session.obs_type is ObsType.volt:
+        sched = volt_beam_obs(obs_list, session)
+    if session.obs_type is ObsType.fast:
+        sched = fast_vis_obs(obs_list, session)
+        pass
+
+    print(f"Parsed {sdf_fn} into {len(sched)} submissions.")
+
+    return sched
 
 
 def sdf_to_dict(filename:str):
@@ -86,10 +112,11 @@ def make_obs_list(inp:dict):
     for i in inp['OBSERVATIONS']:
         obs_id = int(inp['OBSERVATIONS'][i]['OBS_ID'])
         obs_dur = int(inp['OBSERVATIONS'][i]['OBS_DUR'])
-        obs_start_mjd = int(inp['OBSERVATIONS'][i]['OBS_START_MJD'])
-        obs_start_mpm = int(inp['OBSERVATIONS'][i]['OBS_START_MPM'])
+        oo = inp['OBSERVATIONS'][i]['OBS_START']
+        tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
+        obs_start = Time(tt, format='iso').mjd
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
-        obs = Observation(session, obs_id, obs_start_mjd, obs_start_mpm, obs_dur, obs_mode)
+        obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
         try:
             if obs_list[-1].obs_start > obs.obs_start:
                 raise Exception('Current observation starts before previous observation')
@@ -121,7 +148,10 @@ def make_obs_list(inp:dict):
     return session,obs_list
 
 
-def fast_vis_obs(obs_list, session, buffer = 20):
+def fast_vis_obs(obs_list, session, buffer=None):
+    if buffer is None:
+        buffer = 20
+
     start = obs_list[0].obs_start
     ts = obs.obs_start - buffer/3600/24 #do the control command  before the start of the first observation
     cmd = f"con = control.Controller({session.config_file})"
@@ -140,7 +170,19 @@ def fast_vis_obs(obs_list, session, buffer = 20):
     return df
 
 
-def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 20, cal_buffer = 600, pointing_buffer = 10,recording_buffer = 5):
+def power_beam_obs(obs_list, session, mode='buffer'):
+    if mode == 'buffer':
+        controller_buffer = 20
+        configure_buffer = 20
+        cal_buffer = 180
+        pointing_buffer = 10
+        recording_buffer = 5
+    elif mode == 'asap':
+        controller_buffer = 0.1
+        configure_buffer = 0.1
+        cal_buffer = 0.1
+        pointing_buffer = 0.1
+        recording_buffer = 0.1
 
     if session.do_cal:
         dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
@@ -162,7 +204,7 @@ def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 2
 
     # Configure for the beam
     ts += controller_buffer/24/3600 
-    cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibrate_beams = {session.do_cal})"
+    cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {session.do_cal})"
     d.update({ts:cmd})
     ts += (configure_buffer + cal_buffer)/24/3600
 
@@ -172,11 +214,11 @@ def power_beam_obs(obs_list,session,controller_buffer = 20, configure_buffer = 2
         if obs.dec is None:
             cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking})"
         elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, ra = {obs.ra}, dec = {obs.dec}, track={obs.tracking})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking})"
         d.update({ts:cmd})
 
         cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time},t0 = {obs.obs_start})"
-        ts += pointing_buffer + pointing_buffer/24/3600
+        ts += (pointing_buffer + pointing_buffer)/24/3600
         d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])
