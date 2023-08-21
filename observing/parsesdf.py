@@ -12,16 +12,12 @@ def make_sched(sdf_fn, mode='buffer'):
     d = sdf_to_dict(sdf_fn)
     session, obs_list = make_obs_list(d)
 
-    tn = Time.now().mjd
-    t0 = obs_list[0].obs_start
-
     if session.obs_type is ObsType.power:
         sched = power_beam_obs(obs_list, session, mode=mode)
     if session.obs_type is ObsType.volt:
-        sched = volt_beam_obs(obs_list, session)
+        sched = volt_beam_obs(obs_list, session, mode=mode)
     if session.obs_type is ObsType.fast:
-        sched = fast_vis_obs(obs_list, session)
-        pass
+        sched = fast_vis_obs(obs_list, session, mode=mode)
 
     print(f"Parsed {sdf_fn} into {len(sched)} submissions.")
 
@@ -160,15 +156,17 @@ def make_obs_list(inp:dict):
     return session,obs_list
 
 
-def fast_vis_obs(obs_list, session, buffer=None):
+def fast_vis_obs(obs_list, session, mode="buffer"):
     """ Generate dataframe for fast visibility observing mode
     """
 
-    if buffer is None:
-        buffer = 20
+    if mode == "buffer":
+        startbuffer = 20
+    elif mode == "asap":
+        startbuffer = 0.
 
     start = obs_list[0].obs_start
-    ts = obs.obs_start - buffer/3600/24 #do the control command  before the start of the first observation
+    ts = obs.obs_start - startbuffer/3600/24 #do the control command  before the start of the first observation
     cmd = f"con = control.Controller({session.config_file})"
     d = {ts:cmd}
 
@@ -240,7 +238,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     # Go through the list of observations
     for obs in obs_list:
         ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
-        cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time},t0 = {obs.obs_start})"
+        if mode == 'buffer':
+            t0 = obs.obs_start
+        elif mode == 'asap':
+            t0 = 'now'
+        cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0})"
         d.update({ts:cmd})
 
         ts += (pointing_buffer + pointing_buffer)/24/3600
@@ -308,8 +310,11 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     # Go through the list of observations
     for obs in obs_list:
         ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0 = {obs.obs_start}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw})"
-        # TODO: pass in teng_f1, teng_f2, f0
+        if mode == 'buffer':
+            t0 = obs.obs_start
+        elif mode == 'asap':
+            t0 = 'now'
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw})"
         d.update({ts:cmd})
 
         ts += (pointing_buffer + pointing_buffer)/24/3600
