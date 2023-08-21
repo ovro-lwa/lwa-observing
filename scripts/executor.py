@@ -57,8 +57,10 @@ def runrow(rows):
     """
 
     for mjd, row in rows.iterrows():
-        exec(row.command)
-
+        try:
+            exec(row.command)
+        except Exception as exc:
+            print(exc)
 
 ls = dsa_store.DsaStore()
 sched0 = DataFrame([])

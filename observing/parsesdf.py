@@ -241,13 +241,13 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         if mode == 'buffer':
             t0 = obs.obs_start
         elif mode == 'asap':
-            t0 = 'now'
+            t0 = "'now'"
         cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0})"
         d.update({ts:cmd})
 
         ts += (pointing_buffer + pointing_buffer)/24/3600
         if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {' '.join(obs.obj_name)}, track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname = '{' '.join(obs.obj_name)}', track={obs.tracking}, duration = {obs.obs_dur/1e3})"
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {obs.obs_dur/1e3})"
         d.update({ts:cmd})
@@ -313,13 +313,13 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         if mode == 'buffer':
             t0 = obs.obs_start
         elif mode == 'asap':
-            t0 = 'now'
+            t0 = "'now'"
         cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw})"
         d.update({ts:cmd})
 
         ts += (pointing_buffer + pointing_buffer)/24/3600
         if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname = {obs.obj_name}, track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname = '{obs.obj_name}', track={obs.tracking}, duration = {obs.obs_dur/1e3})"
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {obs.obs_dur/1e3})"
         d.update({ts:cmd})
