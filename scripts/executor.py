@@ -65,13 +65,16 @@ sched0 = DataFrame([])
 def sched_callback():
     def a(event):
         global sched0
-        if os.path.exists(event):
-            sched = parsesdf.make_sched(event, mode='buffer')
+        filename = event['filename']
+        if os.path.exists(filename):
+            mode = event['mode']
+            sched = parsesdf.make_sched(filename, mode=mode)
             sched0 = sched_update([sched0, sched])
         else:
             print(f"File {event} does not exist. Not updating schedule.")
     return a
-ls.add_watch('/cmd/observing/sdfname', sched_callback())
+ls.add_watch('/cmd/observing/submitsdf', sched_callback())
+#ls.add_watch('/cmd/observing/sdfname', sched_callback())
 
 
 if __name__ == "__main__":

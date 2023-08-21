@@ -11,15 +11,16 @@ def cli():
 
 @cli.command()
 @click.argument('sdffile')
-#@click.option('--asap', is_flag=True, default=False, show_default=True)
-def submit_sdf(sdffile):
+@click.option('--asap', is_flag=True, default=False, show_default=True)
+def submit_sdf(sdffile, asap):
     """ Submit and SDF by providing the full path to the file.
     """
 
     # TODO: submit to processor key, not one watched directly by executor
 
     assert os.path.exists(sdffile), f"file {sdffile} not found"
-    ls.put_dict('/cmd/observing/sdfname', sdffile)
+    mode = 'asap' if asap else 'buffer'
+    ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
 
 @cli.command()
