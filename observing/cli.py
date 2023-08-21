@@ -16,7 +16,7 @@ def cli():
 # - print go/no-go status
 # - change settings (absorb other scripts)
 # - turn off arx power
-# - ascii plot of f-eng auto spectra
+# - ascii plot of f-eng auto spectra (using drawilleplot as matplotlib backend)
 
 @cli.command()
 @click.argument('sdffile')
