@@ -43,7 +43,7 @@ def submit_next(sched, pool):
 
     row = sched.iloc[0]
     mjd = row.name
-    if mjd - Time.now().mjd < 1/(24*3600):
+    if mjd - Time.now().mjd < 2/(24*3600):
         rows = sched[sched.session_id == row.session_id]
         fut = pool.submit(runrow, rows)
         sched.drop(index=rows.index, axis=0, inplace=True)
@@ -57,6 +57,13 @@ def runrow(rows):
     """
 
     for mjd, row in rows.iterrows():
+        if mjd - Time.now().mjd > 1/(24*3600):
+            print(f"Waiting until MJD {mjd}...")
+            while mjd - Time.now().mjd > 1/(24*3600):
+                sleep(0.49)
+        else:
+            print("Submitting next command...")
+
         try:
             exec(row.command)
         except Exception as exc:
