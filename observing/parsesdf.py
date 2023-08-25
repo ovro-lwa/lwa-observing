@@ -196,7 +196,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 180
+        cal_buffer = 240
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
@@ -237,7 +237,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
     # Go through the list of observations
     for obs in obs_list:
-        ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
+        ts = obs.obs_start - (pointing_buffer + recording_buffer)/24/3600
         if mode == 'buffer':
             t0 = obs.obs_start
         elif mode == 'asap':
@@ -245,11 +245,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0})"
         d.update({ts:cmd})
 
-        ts += (pointing_buffer + pointing_buffer)/24/3600
+        ts += recording_buffer/24/3600
         if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname = '{' '.join(obs.obj_name)}', track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{' '.join(obs.obj_name)}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])
@@ -309,7 +309,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
     # Go through the list of observations
     for obs in obs_list:
-        ts = obs.obs_start - (pointing_buffer - recording_buffer)/24/3600
+        ts = obs.obs_start - (pointing_buffer + recording_buffer)/24/3600
         if mode == 'buffer':
             t0 = obs.obs_start
         elif mode == 'asap':
@@ -317,11 +317,11 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw})"
         d.update({ts:cmd})
 
-        ts += (pointing_buffer + pointing_buffer)/24/3600
+        ts += (recording_buffer)/24/3600
         if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname = '{obs.obj_name}', track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{' '.join(obs.obj_name)}', track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {obs.obs_dur/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])

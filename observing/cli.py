@@ -2,6 +2,7 @@ import os.path
 import click
 from dsautils import dsa_store
 from observing import schedule
+from mnc import control
 
 ls = dsa_store.DsaStore()
 
@@ -30,3 +31,33 @@ def show_schedule(mode):
     """
 
     schedule.print_sched(mode)
+
+
+@cli.command()
+@click.option('--recorder', default='drvs', help='Name of a recorder (drvs, drvf, dr1, drt1, ...)')
+def start_dr(recorder):
+    """ Start data recorder directly (no SDF)
+    """
+
+    assert recorder == 'drvs', "Only drvs supported currently"
+    con = control.Controller()
+    con.start_dr(recorder)
+
+
+@cli.command()
+@click.option('--recorder', default='drvs', help='Name of a recorder (drvs, drvf, dr1, drt1, ...)')
+def stop_dr(recorder):
+    """ Stop data recorder directly (no SDF)
+    """
+
+    assert recorder == 'drvs', "Only drvs supported currently"
+    con = control.Controller()
+    con.stop_dr(recorder)
+
+
+@cli.command()
+def run_calibration():
+    """ Run calibration pipeline to generate solutions in pipeline/caltables/latest directory
+    """
+
+    pass
