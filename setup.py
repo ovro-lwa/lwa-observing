@@ -15,4 +15,10 @@ setup(name='lwa-observing',
         [console_scripts]
         lwaobserving=observing.cli:cli
       ''',
+      install_requires=[
+          "click",
+          "pandas",
+          "mnc-python",
+          "dsa110-pyutils"
+      ],
       zip_safe=False)
