@@ -1,0 +1,19 @@
+#!/bin/bash
+set -ex
+
+echo $HOSTNAME  # should be installing on calim
+echo $PWD  # should be base of code repo
+whoami  # should be user pipeline (or ubuntu?)
+
+# setup
+DATE=$(date --iso-8601=seconds)
+LOG=~/deploy_lwa-observing_$DATE.log
+
+if [[ $HOSTNAME =~ 'calim' ]]; then
+    echo "$DATE" >> $LOG 2>>$LOG
+    conda run -n deployment which python >> $LOG 2>>$LOG
+    conda run -n deployment git describe >> $LOG 2>>$LOG
+    conda run -n deployment pip install . >> $LOG 2>>$LOG
+else
+    echo "Not installing on this host"
+fi

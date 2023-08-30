@@ -60,7 +60,7 @@ class Observation:
         self.obs_mode = obs_mode
         return
     
-    def set_beam_props(self,ra, dec = None, obj_name =None,int_time = None):
+    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None):
         # Check if the observing mode is one of the tracking modes:
         tracking_modes = ['TRK_RADEC','TRK_SOL', 'TRK_JOV','TRK_LUN']
         if self.obs_mode in tracking_modes:
@@ -100,4 +100,10 @@ class Observation:
             self.int_time = int(int_time)
         elif int_time is None:
             self.int_time = 1
+            
+        if self.session.obs_type is ObsType.volt:
+            self.bw = bw
+            self.freq1 = freq1
+            self.freq2 = freq2
+
         return
