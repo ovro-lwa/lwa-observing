@@ -10,6 +10,16 @@ ls = dsa_store.DsaStore()
 def cli():
     pass
 
+# lwaobserving command-line tool ideas:
+# - start slow vis now
+# - make sdf for asap bf or fastvis obs
+# - run calibration pipeline?
+# Other tool "lwamnc"?
+# - print go/no-go status
+# - change settings (absorb other scripts)
+# - turn off arx power
+# - ascii plot of f-eng auto spectra (using drawilleplot as matplotlib backend)
+
 @cli.command()
 @click.argument('sdffile')
 @click.option('--asap', is_flag=True, default=False, show_default=True)
