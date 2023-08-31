@@ -23,11 +23,9 @@ def submit_sdf(sdffile, asap):
     """
 
     # TODO: submit to processor key, not one watched directly by executor
-    if not os.path.isabs:
+    if not os.path.isabs(sdffile):
         sdffile = os.path.abspath(sdffile)
         print(f"Not a full path. Assuming {sdffile}...")
-    else:
-        print(f"Seems to be a full path")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
     mode = 'asap' if asap else 'buffer'
