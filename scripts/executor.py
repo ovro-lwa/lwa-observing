@@ -74,11 +74,17 @@ sched0 = DataFrame([])
 def sched_callback():
     def a(event):
         global sched0
-        filename = event['filename']
-        if os.path.exists(filename):
-            mode = event['mode']
-            sched = parsesdf.make_sched(filename, mode=mode)
-            sched0 = sched_update([sched0, sched])
+        mode = event['mode']
+        if mode == 'reset':
+            # option to reset schedule
+            sched0 = DataFrame([])
+            sched0 = sched_update(sched0)
+
+        if 'filename' in event:
+            filename = event['filename']
+            if os.path.exists(filename):
+                sched = parsesdf.make_sched(filename, mode=mode)
+                sched0 = sched_update([sched0, sched])
         else:
             print(f"File {event} does not exist. Not updating schedule.")
     return a

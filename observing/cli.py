@@ -18,8 +18,11 @@ def cli():
 @cli.command()
 @click.argument('sdffile')
 @click.option('--asap', is_flag=True, default=False, show_default=True)
-def submit_sdf(sdffile, asap):
+@click.option('--reset', is_flag=True, default=False, show_default=True)
+def submit_sdf(sdffile, asap, reset):
     """ Submit and SDF by providing the full path to the file.
+    Flag value asap will submit sdf with commands executed as soon as possible.
+    Flag value reset will reset the schedule.
     """
 
     # TODO: submit to processor key, not one watched directly by executor
@@ -28,6 +31,9 @@ def submit_sdf(sdffile, asap):
         print(f"Not a full path. Assuming {sdffile}...")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
+    if reset:
+        ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
+
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
