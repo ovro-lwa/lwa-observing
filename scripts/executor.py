@@ -126,7 +126,9 @@ if __name__ == "__main__":
             futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
             sleep(0.49)  # at least two per second
         except KeyboardInterrupt:
-            print("Interrupting execution of schedule. Waiting on submissions (Ctrl-C again to interrupt)...")
+            print("Interrupting execution of schedule. Clearing schedule and waiting on submissions (Ctrl-C again to interrupt)...")
+            schedule.put_sched(DataFrame([]))
+
             try:
                 for fut in as_completed(futures):
                     print(f"Completed command: {fut.result()}")
