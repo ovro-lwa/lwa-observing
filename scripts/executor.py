@@ -128,7 +128,8 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("Interrupting execution of schedule. Clearing schedule and waiting on submissions (Ctrl-C again to interrupt)...")
             schedule.put_sched(DataFrame([]))
-
+            for wid in ls.watch_ids:
+                ls.cancel(wid)
             try:
                 for fut in as_completed(futures):
                     print(f"Completed command: {fut.result()}")
