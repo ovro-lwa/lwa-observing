@@ -16,15 +16,9 @@ from astropy.time import Time
 from observing import parsesdf, schedule
 from dsautils import dsa_store
 from mnc import control
-import sys
 import logging
 
-logger = logging.getLogger(__name__)
-logHandler = logging.StreamHandler(sys.stdout)
-logFormat = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-logHandler.setFormatter(logFormat)
-logger.addHandler(logHandler)
-logger.setLevel(logging.INFO)
+logger = logging.getLogger('observing')
 
 
 def sched_update(sched):
