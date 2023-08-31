@@ -3,13 +3,7 @@ from astropy import time
 import sys
 import logging
 
-logger = logging.getLogger(__name__)
-logHandler = logging.StreamHandler(sys.stdout)
-logFormat = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-logHandler.setFormatter(logFormat)
-logger.addHandler(logHandler)
-logger.setLevel(logging.DEBUG)
-
+logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
 
 

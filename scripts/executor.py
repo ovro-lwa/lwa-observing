@@ -89,10 +89,9 @@ def sched_callback():
                 sched = parsesdf.make_sched(filename, mode=mode)
                 sched0 = sched_update([sched0, sched])
         else:
-            logger.info(f"File {event} does not exist. Not updating schedule.")
+            logger.debug(f"No filename defined.")
     return a
 ls.add_watch('/cmd/observing/submitsdf', sched_callback())
-#ls.add_watch('/cmd/observing/sdfname', sched_callback())
 
 
 if __name__ == "__main__":
