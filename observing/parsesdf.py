@@ -2,6 +2,15 @@ import pandas as pd
 import warnings
 from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
+logHandler = logging.StreamHandler(sys.stdout)
+logFormat = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logHandler.setFormatter(logFormat)
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO)
 
 
 def make_sched(sdf_fn, mode='buffer'):
@@ -19,7 +28,7 @@ def make_sched(sdf_fn, mode='buffer'):
     if session.obs_type is ObsType.fast:
         sched = fast_vis_obs(obs_list, session, mode=mode)
 
-    print(f"Parsed {sdf_fn} into {len(sched)} submissions.")
+    logger.info(f"Parsed {sdf_fn} into {len(sched)} submissions.")
 
     return sched
 

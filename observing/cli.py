@@ -3,6 +3,15 @@ import click
 from dsautils import dsa_store
 from observing import schedule
 from mnc import control
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
+logHandler = logging.StreamHandler(sys.stdout)
+logFormat = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logHandler.setFormatter(logFormat)
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO)
 
 ls = dsa_store.DsaStore()
 

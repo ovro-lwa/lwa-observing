@@ -16,6 +16,15 @@ from astropy.time import Time
 from observing import parsesdf, schedule
 from dsautils import dsa_store
 from mnc import control
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
+logHandler = logging.StreamHandler(sys.stdout)
+logFormat = logging.Formatter('%(asctime)s [%(levelname)-8s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logHandler.setFormatter(logFormat)
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO)
 
 
 def sched_update(sched):
@@ -31,7 +40,7 @@ def sched_update(sched):
     sched.sort_index(inplace=True)
     n_old = sum(sched.index < Time.now().mjd)
     sched = sched[sched.index > Time.now().mjd]
-    print(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} commands older than {Time.now().mjd}).")
+    logger.info(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} commands older than {Time.now().mjd}).")
 
     return sched
 
@@ -58,16 +67,16 @@ def runrow(rows):
 
     for mjd, row in rows.iterrows():
         if mjd - Time.now().mjd > 1/(24*3600):
-            print(f"Waiting until MJD {mjd}...")
+            logger.info(f"Waiting until MJD {mjd}...")
             while mjd - Time.now().mjd > 1/(24*3600):
                 sleep(0.49)
         else:
-            print("Submitting next command...")
+            logger.info("Submitting next command...")
 
         try:
             exec(row.command)
         except Exception as exc:
-            print(exc)
+            logger.warning(exc)
 
 ls = dsa_store.DsaStore()
 sched0 = DataFrame([])
@@ -86,7 +95,7 @@ def sched_callback():
                 sched = parsesdf.make_sched(filename, mode=mode)
                 sched0 = sched_update([sched0, sched])
         else:
-            print(f"File {event} does not exist. Not updating schedule.")
+            logger.info(f"File {event} does not exist. Not updating schedule.")
     return a
 ls.add_watch('/cmd/observing/submitsdf', sched_callback())
 #ls.add_watch('/cmd/observing/sdfname', sched_callback())
@@ -99,7 +108,7 @@ if __name__ == "__main__":
     pool = ProcessPoolExecutor(max_workers = 1)
 
     if len(sys.argv) == 2:
-        print(f"Initializing schedule with {sys.argv[1]}")
+        logger.info(f"Initializing schedule with {sys.argv[1]}")
         sched0 = parsesdf.make_sched(sys.argv[1])
 
     # initialize
@@ -115,13 +124,13 @@ if __name__ == "__main__":
                 fut = submit_next(sched0, pool)    # when time comes, fire and forget
                 if fut is not None:
                     futures.append(fut)
-                    print(f"Submitted one. {len(futures)} futures")
+                    logger.info(f"Submitted one. {len(futures)} futures")
                 if len(sched0):
                     if sched0.iloc[0].name != nextmjd:
                         nextmjd = sched0.iloc[0].name
-                        print(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
+                        logger.info(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
                 else:
-                    print("Schedule contains 0 commands.")
+                    logger.info("Schedule contains 0 commands.")
 
             # clean up futures
 #            for fut in futures:
@@ -132,19 +141,19 @@ if __name__ == "__main__":
             futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
             sleep(0.49)  # at least two per second
         except KeyboardInterrupt:
-            print("Interrupting execution of schedule. Clearing schedule and waiting on submissions (Ctrl-C again to interrupt)...")
+            logger.info("Interrupting execution of schedule. Clearing schedule and waiting on submissions (Ctrl-C again to interrupt)...")
             schedule.put_sched(DataFrame([]))
             for wid in ls.watch_ids:
                 ls.cancel(wid)
             try:
                 for fut in as_completed(futures):
-                    print(f"Completed command: {fut.result()}")
+                    logger.info(f"Completed command: {fut.result()}")
             except KeyboardInterrupt:
-                print(f"Interrupting again. Cancelling {len(futures)} submissions...")
+                logger.info(f"Interrupting again. Cancelling {len(futures)} submissions...")
                 for fut in futures:
                     res = fut.cancel()
                     if not res:
-                        print("\tCould not cancel a submission...")
+                        logger.warning("\tCould not cancel a submission...")
             break
             
         if len(sched0) != lsched0 or len(futures) != lfutures:
@@ -152,6 +161,6 @@ if __name__ == "__main__":
                 schedule.put_sched(sched0)   # this will remove ones still being observed...
             lsched0 = len(sched0)
             lfutures = len(futures)
-            print(f'Change to length of schedule or futures: {len(sched0)}, {len(futures)}')
+            logger.info(f'Change to length of schedule or futures: {len(sched0)}, {len(futures)}')
             if lsched0:
-                print('Current schedule:', sched0)
+                logger.info('Current schedule:', sched0)
