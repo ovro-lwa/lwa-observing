@@ -29,9 +29,10 @@ def sched_update(sched):
         sched = concat(sched)
         
     sched.sort_index(inplace=True)
+    print(sched)
     n_old = sum(sched.index < Time.now().mjd)
-    sched = sched[sched.index > Time.now().mjd - 120/(24*3600)]  # submit within last 2 min
-    print(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} old commands).")
+    sched = sched[sched.index > Time.now().mjd]
+    print(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} commands older than {Time.now().mjd}).")
 
     return sched
 

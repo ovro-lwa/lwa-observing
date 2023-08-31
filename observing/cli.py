@@ -28,8 +28,11 @@ def submit_sdf(sdffile, asap):
     """
 
     # TODO: submit to processor key, not one watched directly by executor
+    if not os.path.isabs:
+        sdffile = os.path.abspath(sdffile)
+        print(f"Not a full path. Assuming {sdffile}...")
 
-    assert os.path.exists(sdffile), f"file {sdffile} not found"
+    assert os.path.exists(sdffile), f"File {sdffile} not found"
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
@@ -45,13 +48,14 @@ def show_schedule(mode):
 
 @cli.command()
 @click.option('--recorder', default='drvs', help='Name of a recorder (drvs, drvf, dr1, drt1, ...)')
-def start_dr(recorder):
-    """ Start data recorder directly (no SDF)
+@click.option('--duration', default=None, help='Duration of recording in ms. Default for drvs is to leave it on. Beamformers need duration set.')
+def start_dr(recorder, duration):
+    """ Start data recorder directly now (no SDF)
+    Currently only supports starting recorder now.
     """
 
-    assert recorder == 'drvs', "Only drvs supported currently"
     con = control.Controller()
-    con.start_dr(recorder)
+    con.start_dr(recorder, duration=duration)
 
 
 @cli.command()
@@ -60,8 +64,7 @@ def stop_dr(recorder):
     """ Stop data recorder directly (no SDF)
     """
 
-    assert recorder == 'drvs', "Only drvs supported currently"
-    con = control.Controller()
+    con = control.Controller(recorders=recorder)
     con.stop_dr(recorder)
 
 
