@@ -26,6 +26,8 @@ def submit_sdf(sdffile, asap):
     if not os.path.isabs:
         sdffile = os.path.abspath(sdffile)
         print(f"Not a full path. Assuming {sdffile}...")
+    else:
+        print(f"Seems to be a full path")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
     mode = 'asap' if asap else 'buffer'
