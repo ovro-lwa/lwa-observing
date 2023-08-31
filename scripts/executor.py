@@ -80,6 +80,7 @@ def sched_callback():
         mode = event['mode']
         if mode == 'reset':
             # option to reset schedule
+            logger.info("Resetting schedule...")
             sched0 = DataFrame([])
             sched0 = sched_update(sched0)
 
