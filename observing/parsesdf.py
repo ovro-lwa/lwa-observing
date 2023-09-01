@@ -85,7 +85,7 @@ def make_obs_list(inp:dict):
     try:
         config_file = inp['SESSION']['CONFIG_FILE']
     except:
-        warnings.warn('No config_file specified. Assuming the standard')
+        warnings.warning('No config_file specified. Assuming the standard')
         config_file = None
         
     if obs_type == ObsType.power.value or obs_type == ObsType.volt.value:
@@ -93,13 +93,13 @@ def make_obs_list(inp:dict):
         try:
             do_cal = inp['SESSION']['DO_CAL']
         except:
-            warnings.warn('Instructions to calibrate not specified. Assuming the beam should be calibrated')
+            warnings.warning('Instructions to calibrate not specified. Assuming the beam should be calibrated')
             do_cal = True
             
         try:
             cal_dir = inp['SESSION']['CAL_DIR']
         except:
-            warnings.warn('No cal directory specified. Assuming the one in the configuration file')
+            warnings.warning('No cal directory specified. Assuming the one in the configuration file')
             cal_dir = None
             
     elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value:
@@ -138,18 +138,18 @@ def make_obs_list(inp:dict):
             try:
                 ra = inp['OBSERVATIONS'][i]['OBS_RA']
             except:
-                warnings.warn('Need to give RA or name of object for a beam observation')
+                warnings.warning('Need to give RA or name of object for a beam observation')
                 ra = None
             try:
                 dec = inp['OBSERVATIONS'][i]['OBS_DEC']
             except:
-                warnings.warn('No declination given, assuming the RA input is the name of an object')
+                warnings.warning('No declination given, assuming the RA input is the name of an object')
                 dec = None
             try:
                 int_time = inp['OBSERVATIONS'][i]['OBS_INT_TIME']
             except:
                 int_time = None
-                warnings.warn('No integration time given. Assuming 1 ms')
+                warnings.warning('No integration time given. Assuming 1 ms')
             try:
                 obj_name = inp['OBSERVATIONS'][i]['OBS_TARGET']
             except:
