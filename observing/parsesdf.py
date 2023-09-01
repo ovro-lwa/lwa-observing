@@ -170,7 +170,7 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
         startbuffer = 0.
 
     start = obs_list[0].obs_start
-    ts = obs.obs_start - startbuffer/3600/24 #do the control command  before the start of the first observation
+    ts = obs.obs_start - startbuffer/3600/24  # do the control command  before the start of the first observation
     cmd = f"con = control.Controller({session.config_file})"
     d = {ts:cmd}
 
@@ -230,7 +230,8 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         
     if session.cal_directory is not None and session.do_cal == True:
         # re-assign calibration directory if it is specified
-        cmd = f"con.conf(['xengine']['cal_directory'] = '{session.cal_directory}')"
+        ts += 0.1
+        cmd = f"con.conf['xengine']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
     # Configure for the beam

@@ -157,4 +157,4 @@ if __name__ == "__main__":
             lfutures = len(futures)
             logger.info(f'Change to length of schedule or futures: {len(sched0)}, {len(futures)}')
             if lsched0:
-                logger.info('Current schedule:', sched0)
+                logger.info(f'Current schedule: {sched0}')
