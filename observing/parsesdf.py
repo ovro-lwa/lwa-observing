@@ -171,7 +171,7 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
 
     start = obs_list[0].obs_start
     ts = obs.obs_start - startbuffer/3600/24  # do the control command  before the start of the first observation
-    cmd = f"con = control.Controller({session.config_file})"
+    cmd = f"con = control.Controller('{session.config_file}')"
     d = {ts:cmd}
 
     # handy name 
@@ -179,7 +179,10 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
     if session.beam_num is not None:
         session_mode_name += f"{session.beam_num}"
 
-    con.configure_xengine(['drvf'])
+    ts += 0.1/(24*3600)
+    cmd = "con.configure_xengine(['drvf'])"
+    d = {ts:cmd}
+
     for obs in obs_list:
         end = obs.obs_start + duration/24/3600/1e3
         cmd = f"con.start_dr(['drvf'], t0 = {start})"
@@ -210,9 +213,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 0.1
         recording_buffer = 0.1
 
-    if session.do_cal:
-        dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
-    elif not session.do_cal:
+    if session.cal_directory is not None and session.do_cal == True:
+        logger.debug("Calibration requested and cal_directory set. Scheduling for calibration...")
+        dt = (controller_buffer + configure_buffer + cal_buffer + pointing_buffer + recording_buffer)/3600/24
+    else:
+        logger.debug("Calibration not requested or cal_directory not set. Not scheduling for calibration...")
         cal_buffer = 0
         dt = (controller_buffer + configure_buffer + pointing_buffer)/3600/24
 
@@ -230,7 +235,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         
     if session.cal_directory is not None and session.do_cal == True:
         # re-assign calibration directory if it is specified
-        ts += 0.1
+        ts += 0.1/(24*3600)
         cmd = f"con.conf['xengine']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
@@ -238,7 +243,9 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     ts += controller_buffer/24/3600 
     cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {session.do_cal})"
     d.update({ts:cmd})
-    ts += (configure_buffer + cal_buffer)/24/3600
+
+    if session.cal_directory is not None and session.do_cal == True:
+        ts += cal_buffer/24/3600
 
     # Go through the list of observations
     for obs in obs_list:
