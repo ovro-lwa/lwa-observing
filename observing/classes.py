@@ -58,11 +58,19 @@ class Observation:
         self.obs_dur = obs_dur
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode
-        return
     
     def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None):
+
+        # overload obs_mode for some targets
+        if obj_name.lower() == 'sun':
+            self.obs_mode = 'TRK_SOL'
+        elif obj_name.lower() == 'jupiter':
+            self.obs_mode = 'TRK_JOV'
+        elif obj_name.lower() == 'moon':
+            self.obs_mode = 'TRK_LUN'
+
         # Check if the observing mode is one of the tracking modes:
-        tracking_modes = ['TRK_RADEC','TRK_SOL', 'TRK_JOV','TRK_LUN']
+        tracking_modes = ['TRK_RADEC', 'TRK_SOL', 'TRK_JOV','TRK_LUN']
         if self.obs_mode in tracking_modes:
             self.tracking = True
 
@@ -85,15 +93,10 @@ class Observation:
                 self.dec = float(dec)
                 self.obj_name = obj_name
 
-        elif self.obs_mode in ephem_modes:
+        else:
             self.ra = None
             self.dec = None
-            if self.obs_mode == 'TRK_SOL':
-                self.obj_name = 'Sun'
-            if self.obs_mode == 'TRK_JOV':
-                self.obj_name = 'Jupiter'
-            if self.obs_mode == 'TRK_LUN':
-                self.obj_name = 'Moon'
+            self.obj_name = obj_name
 
         # Set integration time of the beam. If none, the default is 1ms:            
         if int_time is not None:

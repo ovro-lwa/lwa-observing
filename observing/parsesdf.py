@@ -115,7 +115,18 @@ def make_obs_list(inp:dict):
         oo = inp['OBSERVATIONS'][i]['OBS_START']
         tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
         obs_start = Time(tt, format='iso').mjd
-        obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
+
+        # define mode from target. default to that specified
+        obs_target = inp['OBSERVATIONS'][i]['OBS_TARGET'].lower()
+        if obs_target == 'sun':
+            obs_mode = 'TRK_SOL'
+        elif obs_target == 'jupiter':
+            obs_mode = 'TRK_JOV'
+        elif obs_target == 'moon':
+            obs_mode = 'TRK_LUN'
+        else:
+            obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
+
         obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
         try:
             if obs_list[-1].obs_start > obs.obs_start:
