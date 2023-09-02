@@ -85,7 +85,7 @@ def make_obs_list(inp:dict):
     try:
         config_file = inp['SESSION']['CONFIG_FILE']
     except:
-        warnings.warning('No config_file specified. Assuming the standard')
+        warnings.warn('No config_file specified. Assuming the standard')
         config_file = None
         
     if obs_type == ObsType.power.value or obs_type == ObsType.volt.value:
@@ -93,13 +93,13 @@ def make_obs_list(inp:dict):
         try:
             do_cal = inp['SESSION']['DO_CAL']
         except:
-            warnings.warning('Instructions to calibrate not specified. Assuming the beam should be calibrated')
+            warnings.warn('Instructions to calibrate not specified. Assuming the beam should be calibrated')
             do_cal = True
             
         try:
             cal_dir = inp['SESSION']['CAL_DIR']
         except:
-            warnings.warning('No cal directory specified. Assuming the one in the configuration file')
+            warnings.warn('No cal directory specified. Assuming the one in the configuration file')
             cal_dir = None
             
     elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value:
@@ -138,18 +138,18 @@ def make_obs_list(inp:dict):
             try:
                 ra = inp['OBSERVATIONS'][i]['OBS_RA']
             except:
-                warnings.warning('Need to give RA or name of object for a beam observation')
+                warnings.warn('Need to give RA or name of object for a beam observation')
                 ra = None
             try:
                 dec = inp['OBSERVATIONS'][i]['OBS_DEC']
             except:
-                warnings.warning('No declination given, assuming the RA input is the name of an object')
+                warnings.warn('No declination given, assuming the RA input is the name of an object')
                 dec = None
             try:
                 int_time = inp['OBSERVATIONS'][i]['OBS_INT_TIME']
             except:
                 int_time = None
-                warnings.warning('No integration time given. Assuming 1 ms')
+                warnings.warn('No integration time given. Assuming 1 ms')
             try:
                 obj_name = inp['OBSERVATIONS'][i]['OBS_TARGET']
             except:
@@ -214,7 +214,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 240
+        cal_buffer = 360
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
@@ -290,7 +290,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 300
+        cal_buffer = 360
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
