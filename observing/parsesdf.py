@@ -82,30 +82,16 @@ def make_obs_list(inp:dict):
     """
     obs_type = inp['SESSION']['SESSION_MODE']
     session_id = inp['SESSION']['SESSION_ID']
-    try:
-        config_file = inp['SESSION']['CONFIG_FILE']
-    except:
-        warnings.warn('No config_file specified. Assuming the standard')
-        config_file = None
+    config_file = inp['SESSION'].get('CONFIG_FILE', None)
         
     if obs_type == ObsType.power.value or obs_type == ObsType.volt.value:
         beam_num = int(inp['SESSION']['SESSION_DRX_BEAM'])
-        try:
-            do_cal = inp['SESSION']['DO_CAL']
-        except:
-            warnings.warn('Instructions to calibrate not specified. Assuming the beam should be calibrated')
-            do_cal = True
-            
-        try:
-            cal_dir = inp['SESSION']['CAL_DIR']
-        except:
-            warnings.warn('No cal directory specified. Assuming the one in the configuration file')
-            cal_dir = None
-            
+        do_cal = inp['SESSION'].get('DO_CAL', True)
+        cal_dir = inp['SESSION'].get('CAL_DIR', None)
     elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value:
         beam_num = None
-        cal_dir = None
         do_cal = False
+        cal_dir = None
     
     session = Session(obs_type,session_id,config_file,cal_dir,do_cal,beam_num)    
     obs_list = []
@@ -216,11 +202,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 0.1
         recording_buffer = 0.1
 
-    if session.cal_directory is not None and session.do_cal == True:
-        logger.debug("Calibration requested and cal_directory set. Scheduling for calibration...")
+    if session.do_cal == True:
+        logger.debug("Scheduling for calibration time...")
         dt = (controller_buffer + configure_buffer + cal_buffer + pointing_buffer + recording_buffer)/3600/24
     else:
-        logger.debug("Calibration not requested or cal_directory not set. Not scheduling for calibration...")
+        logger.debug("Not scheduling for calibration time...")
         cal_buffer = 0
         dt = (controller_buffer + configure_buffer + pointing_buffer)/3600/24
 
@@ -236,7 +222,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
-    if session.cal_directory is not None and session.do_cal == True:
+    if session.cal_directory is not None:
         # re-assign calibration directory if it is specified
         ts += 0.1/(24*3600)
         cmd = f"con.conf['xengine']['cal_directory'] = '{session.cal_directory}'"
