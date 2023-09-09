@@ -1,4 +1,5 @@
 from enum import Enum
+import os.path
 
 class ObsType(Enum):
     volt = 'VOLT'
