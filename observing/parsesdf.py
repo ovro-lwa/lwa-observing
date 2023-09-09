@@ -1,5 +1,4 @@
 import pandas as pd
-import warnings
 from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
 import sys
@@ -102,7 +101,7 @@ def make_obs_list(inp:dict):
         tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
         obs_start = Time(tt, format='iso').mjd
         # define mode from target. default to that specified
-        obs_target = inp['OBSERVATIONS'][i]['OBS_TARGET'].lower()
+        obs_target = inp['OBSERVATIONS'][i]['OBS_TARGET']
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
 
         obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
@@ -116,18 +115,18 @@ def make_obs_list(inp:dict):
             try:
                 ra = inp['OBSERVATIONS'][i]['OBS_RA']
             except:
-                warnings.warn('Need to give RA or name of object for a beam observation')
+                logger.warning('Need to give RA or name of object for a beam observation')
                 ra = None
             try:
                 dec = inp['OBSERVATIONS'][i]['OBS_DEC']
             except:
-                warnings.warn('No declination given, assuming the RA input is the name of an object')
+                logger.warning('No declination given, assuming the RA input is the name of an object')
                 dec = None
             try:
                 int_time = inp['OBSERVATIONS'][i]['OBS_INT_TIME']
             except:
                 int_time = None
-                warnings.warn('No integration time given. Assuming 1 ms')
+                logger.warning('No integration time given. Assuming 1 ms')
             try:
                 obj_name = inp['OBSERVATIONS'][i]['OBS_TARGET']
             except:
@@ -248,7 +247,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
         ts += recording_buffer/24/3600
         if obs.dec is None:
-            targetname = obs.obj_name if isinstance(obs.obj_name, str) else ' '.join(obs.obj_name)
+            targetname = obs.obj_name
             cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"

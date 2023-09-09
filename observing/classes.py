@@ -65,6 +65,7 @@ class Observation:
     def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None):
 
         # overload obs_mode for some targets
+        obj_name = obj_name if isinstance(obj_name, str) else ' '.join(obj_name)
         if obj_name.lower() == 'sun':
             self.obs_mode = 'TRK_SOL'
         elif obj_name.lower() == 'jupiter':
