@@ -1,5 +1,9 @@
 from dsautils import dsa_store
 from astropy import time
+import sys
+import logging
+
+logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
 
 
@@ -43,18 +47,18 @@ def print_sched(mode=None):
     mjd = time.Time.now().mjd
 
     if mode is None:
-        print(f"Schedule (at MJD={mjd})")
+        logger.info(f"Schedule (at MJD={mjd})")
         if not len(dd):
-            print("\tNothing scheduled")
+            logger.info("\tNothing scheduled")
         else:
             for kk, vv in dd.items():
-                print(f"Mode {kk}:")
+                logger.info(f"Mode {kk}:")
                 for kk2,vv2 in vv.items():
-                    print(f"\tSession {kk2} (start, stop): {vv2}")
+                    logger.info(f"\tSession {kk2} (start, stop): {vv2}")
     else:
         if mode not in dd:
-            print(f"Mode {mode} not in schedule.")
+            logger.info(f"Mode {mode} not in schedule.")
         else:
-            print(f"Schedule for mode {mode} (at MJD={mjd})")
+            logger.info(f"Schedule for mode {mode} (at MJD={mjd})")
             for kk2,vv2 in dd[mode].items():
-                print(f"\tSession {kk2} (start, stop): {vv2}")
+                logger.info(f"\tSession {kk2} (start, stop): {vv2}")

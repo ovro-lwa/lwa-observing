@@ -1,7 +1,10 @@
 import pandas as pd
-import warnings
 from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
+import sys
+import logging
+
+logger = logging.getLogger('observing')
 
 
 def make_sched(sdf_fn, mode='buffer'):
@@ -19,7 +22,7 @@ def make_sched(sdf_fn, mode='buffer'):
     if session.obs_type is ObsType.fast:
         sched = fast_vis_obs(obs_list, session, mode=mode)
 
-    print(f"Parsed {sdf_fn} into {len(sched)} submissions.")
+    logger.info(f"Parsed {sdf_fn} into {len(sched)} submissions.")
 
     return sched
 
@@ -78,30 +81,16 @@ def make_obs_list(inp:dict):
     """
     obs_type = inp['SESSION']['SESSION_MODE']
     session_id = inp['SESSION']['SESSION_ID']
-    try:
-        config_file = inp['SESSION']['CONFIG_FILE']
-    except:
-        warnings.warn('No config_file specified. Assuming the standard')
-        config_file = None
+    config_file = inp['SESSION'].get('CONFIG_FILE', None)
         
     if obs_type == ObsType.power.value or obs_type == ObsType.volt.value:
         beam_num = int(inp['SESSION']['SESSION_DRX_BEAM'])
-        try:
-            do_cal = inp['SESSION']['DO_CAL']
-        except:
-            warnings.warn('Instructions to calibrate not specified. Assuming the beam should be calibrated')
-            do_cal = True
-            
-        try:
-            cal_dir = inp['SESSION']['CAL_DIR']
-        except:
-            warnings.warn('No cal directory specified. Assuming the one in the configuration file')
-            cal_dir = None
-            
+        do_cal = inp['SESSION'].get('DO_CAL', True)
+        cal_dir = inp['SESSION'].get('CAL_DIR', None)
     elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value:
         beam_num = None
-        cal_dir = None
         do_cal = False
+        cal_dir = None
     
     session = Session(obs_type,session_id,config_file,cal_dir,do_cal,beam_num)    
     obs_list = []
@@ -111,7 +100,10 @@ def make_obs_list(inp:dict):
         oo = inp['OBSERVATIONS'][i]['OBS_START']
         tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
         obs_start = Time(tt, format='iso').mjd
+        # define mode from target. default to that specified
+        obs_target = inp['OBSERVATIONS'][i]['OBS_TARGET']
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
+
         obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
         try:
             if obs_list[-1].obs_start > obs.obs_start:
@@ -123,18 +115,18 @@ def make_obs_list(inp:dict):
             try:
                 ra = inp['OBSERVATIONS'][i]['OBS_RA']
             except:
-                warnings.warn('Need to give RA or name of object for a beam observation')
+                logger.warning('Need to give RA or name of object for a beam observation')
                 ra = None
             try:
                 dec = inp['OBSERVATIONS'][i]['OBS_DEC']
             except:
-                warnings.warn('No declination given, assuming the RA input is the name of an object')
+                logger.warning('No declination given, assuming the RA input is the name of an object')
                 dec = None
             try:
                 int_time = inp['OBSERVATIONS'][i]['OBS_INT_TIME']
             except:
                 int_time = None
-                warnings.warn('No integration time given. Assuming 1 ms')
+                logger.warning('No integration time given. Assuming 1 ms')
             try:
                 obj_name = inp['OBSERVATIONS'][i]['OBS_TARGET']
             except:
@@ -166,8 +158,8 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
         startbuffer = 0.
 
     start = obs_list[0].obs_start
-    ts = obs.obs_start - startbuffer/3600/24 #do the control command  before the start of the first observation
-    cmd = f"con = control.Controller({session.config_file})"
+    ts = obs.obs_start - startbuffer/3600/24  # do the control command  before the start of the first observation
+    cmd = f"con = control.Controller('{session.config_file}')"
     d = {ts:cmd}
 
     # handy name 
@@ -175,7 +167,10 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
     if session.beam_num is not None:
         session_mode_name += f"{session.beam_num}"
 
-    con.configure_xengine(['drvf'])
+    ts += 0.1/(24*3600)
+    cmd = "con.configure_xengine(['drvf'])"
+    d = {ts:cmd}
+
     for obs in obs_list:
         end = obs.obs_start + duration/24/3600/1e3
         cmd = f"con.start_dr(['drvf'], t0 = {start})"
@@ -196,7 +191,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 240
+        cal_buffer = 360
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
@@ -206,9 +201,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 0.1
         recording_buffer = 0.1
 
-    if session.do_cal:
-        dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
-    elif not session.do_cal:
+    if session.do_cal == True:
+        logger.debug("Scheduling for calibration time...")
+        dt = (controller_buffer + configure_buffer + cal_buffer + pointing_buffer + recording_buffer)/3600/24
+    else:
+        logger.debug("Not scheduling for calibration time...")
         cal_buffer = 0
         dt = (controller_buffer + configure_buffer + pointing_buffer)/3600/24
 
@@ -224,16 +221,19 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
-    if session.cal_directory is not None and session.do_cal == True:
+    if session.cal_directory is not None:
         # re-assign calibration directory if it is specified
-        cmd = f"con.conf(['xengine']['cal_directory'] = '{session.cal_directory}')"
+        ts += 0.1/(24*3600)
+        cmd = f"con.conf['xengines']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
     # Configure for the beam
     ts += controller_buffer/24/3600 
     cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {session.do_cal})"
     d.update({ts:cmd})
-    ts += (configure_buffer + cal_buffer)/24/3600
+
+    if session.cal_directory is not None and session.do_cal == True:
+        ts += cal_buffer/24/3600
 
     # Go through the list of observations
     for obs in obs_list:
@@ -247,7 +247,8 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
         ts += recording_buffer/24/3600
         if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{' '.join(obs.obj_name)}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+            targetname = obs.obj_name
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
@@ -266,7 +267,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 300
+        cal_buffer = 360
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
@@ -319,7 +320,8 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
         ts += (recording_buffer)/24/3600
         if obs.dec is None:
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{' '.join(obs.obj_name)}', track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
+            targetname = obs.obj_name if isinstance(obs.obj_name, str) else ' '.join(obs.obj_name)
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})

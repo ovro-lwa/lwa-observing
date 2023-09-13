@@ -3,7 +3,10 @@ import click
 from dsautils import dsa_store
 from observing import schedule
 from mnc import control
+import sys
+import logging
 
+logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
 
 @click.group('lwaobserving')
@@ -11,25 +14,29 @@ def cli():
     pass
 
 # lwaobserving command-line tool ideas:
-# - start slow vis now
-# - make sdf for asap bf or fastvis obs
 # - run calibration pipeline?
 # Other tool "lwamnc"?
 # - print go/no-go status
-# - change settings (absorb other scripts)
-# - turn off arx power
-# - ascii plot of f-eng auto spectra (using drawilleplot as matplotlib backend)
 
 @cli.command()
 @click.argument('sdffile')
 @click.option('--asap', is_flag=True, default=False, show_default=True)
-def submit_sdf(sdffile, asap):
+@click.option('--reset', is_flag=True, default=False, show_default=True)
+def submit_sdf(sdffile, asap, reset):
     """ Submit and SDF by providing the full path to the file.
+    Flag value asap will submit sdf with commands executed as soon as possible.
+    Flag value reset will reset the schedule.
     """
 
     # TODO: submit to processor key, not one watched directly by executor
+    if not os.path.isabs(sdffile):
+        sdffile = os.path.abspath(sdffile)
+        print(f"Not a full path. Assuming {sdffile}...")
 
-    assert os.path.exists(sdffile), f"file {sdffile} not found"
+    assert os.path.exists(sdffile), f"File {sdffile} not found"
+    if reset:
+        ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
+
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
@@ -45,13 +52,14 @@ def show_schedule(mode):
 
 @cli.command()
 @click.option('--recorder', default='drvs', help='Name of a recorder (drvs, drvf, dr1, drt1, ...)')
-def start_dr(recorder):
-    """ Start data recorder directly (no SDF)
+@click.option('--duration', default=None, help='Duration of recording in ms. Default for drvs is to leave it on. Beamformers need duration set.')
+def start_dr(recorder, duration):
+    """ Start data recorder directly now (no SDF)
+    Currently only supports starting recorder now.
     """
 
-    assert recorder == 'drvs', "Only drvs supported currently"
     con = control.Controller()
-    con.start_dr(recorder)
+    con.start_dr(recorder, duration=duration)
 
 
 @cli.command()
@@ -60,8 +68,7 @@ def stop_dr(recorder):
     """ Stop data recorder directly (no SDF)
     """
 
-    assert recorder == 'drvs', "Only drvs supported currently"
-    con = control.Controller()
+    con = control.Controller(recorders=recorder)
     con.stop_dr(recorder)
 
 
