@@ -58,6 +58,7 @@ def submit_next(sched, pool):
     if mjd - Time.now().mjd < 2/(24*3600):
         rows = sched[sched.session_id == row.session_id]
         fut = pool.submit(runrow, rows)
+        schedule.put_submitted(rows)
         sched.drop(index=rows.index, axis=0, inplace=True)
         return fut
     else:
