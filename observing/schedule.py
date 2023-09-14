@@ -17,7 +17,7 @@ def create_dict(sched):
         for ss in set(sched.session_mode_name):
             session, mode = ss.split("_")
             times = sched[sched.session_mode_name == ss].index    
-            dd[mode] = {session: [times.min(), times.max()]}   # time range per session_mode_name per mode
+            dd[mode] = {session_mode_name: [times.min(), times.max()]}   # time range per session_mode_name per mode
 
     return dd
 
@@ -54,11 +54,11 @@ def print_sched(mode=None):
             for kk, vv in dd.items():
                 logger.info(f"Mode {kk}:")
                 for kk2,vv2 in vv.items():
-                    logger.info(f"\tSession {kk2} (start, stop): {vv2}")
+                    logger.info(f"\t Session: {kk2}. Start, Stop: {vv2}")
     else:
         if mode not in dd:
             logger.info(f"Mode {mode} not in schedule.")
         else:
             logger.info(f"Schedule for mode {mode} (at MJD={mjd})")
             for kk2,vv2 in dd[mode].items():
-                logger.info(f"\tSession {kk2} (start, stop): {vv2}")
+                logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")

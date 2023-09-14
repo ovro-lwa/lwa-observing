@@ -30,19 +30,20 @@ def sched_update(sched, mode='buffer'):
     # TODO: remove duplicates
 
     if isinstance(sched, list):
-        if mode != 'asap':
-            include = []
-            for s0 in sched:
-                if s0.index[0] > Time.now.mjd:
-                    include.append(s0)
-                else:
-                    logger.warning(f"Removing session starting at {s0.index[0]}")
+        if mode == 'asap':
+            sched = concat(sched)
         else:
-            include = sched
-        sched = concat(include)
+            include = [DataFrame([])]
+            for s0 in sched:
+                if len(s0):
+                    if s0.index[0] > Time.now().mjd:
+                        include.append(s0)
+                    else:
+                        logger.warning(f"Removing session starting at {s0.index[0]}")
+            sched = concat(include)
         
     sched.sort_index(inplace=True)
-    logger.info(f"Updated sched to {len(sched)} commands from {len(include)} sessions.")
+    logger.info(f"Updated sched to {len(sched)} commands.")
 
     return sched
 
@@ -95,6 +96,7 @@ def sched_callback():
         if 'filename' in event:
             filename = event['filename']
             if os.path.exists(filename):
+                # TODO: add mode == 'cancel' to re-parse sdf for session id and removing it from schedule in sched_update
                 sched = parsesdf.make_sched(filename, mode=mode)
                 sched.sort_index(inplace=True)
                 sched0 = sched_update([sched0, sched], mode=mode)
