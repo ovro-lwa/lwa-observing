@@ -21,20 +21,28 @@ import logging
 logger = logging.getLogger('observing')
 
 
-def sched_update(sched):
+def sched_update(sched, mode='buffer'):
     """ Take a schedule or list of schedules, concatenate and sort them.
     Will either merge input list of scheds or get new sched from etcd set.
+    If mode=='asap', then old session will not be removed.
     """
 
     # TODO: remove duplicates
 
     if isinstance(sched, list):
-        sched = concat(sched)
+        if mode != 'asap':
+            include = []
+            for s0 in sched:
+                if s0.index[0] > Time.now.mjd:
+                    include.append(s0)
+                else:
+                    logger.warning(f"Removing session starting at {s0.index[0]}")
+        else:
+            include = sched
+        sched = concat(include)
         
     sched.sort_index(inplace=True)
-    n_old = sum(sched.index < Time.now().mjd)
-    sched = sched[sched.index > Time.now().mjd]
-    logger.info(f"Updated sched to {len(sched)} sorted submissions (removed {n_old} commands older than {Time.now().mjd}).")
+    logger.info(f"Updated sched to {len(sched)} commands from {len(include)} sessions.")
 
     return sched
 
@@ -88,7 +96,8 @@ def sched_callback():
             filename = event['filename']
             if os.path.exists(filename):
                 sched = parsesdf.make_sched(filename, mode=mode)
-                sched0 = sched_update([sched0, sched])
+                sched.sort_index(inplace=True)
+                sched0 = sched_update([sched0, sched], mode=mode)
         else:
             logger.debug(f"No filename defined.")
     return a
@@ -99,7 +108,7 @@ if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
-    pool = ProcessPoolExecutor(max_workers = 1)
+    pool = ProcessPoolExecutor(max_workers = 8)
 
     if len(sys.argv) == 2:
         logger.info(f"Initializing schedule with {sys.argv[1]}")
