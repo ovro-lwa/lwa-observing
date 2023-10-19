@@ -42,6 +42,18 @@ def submit_sdf(sdffile, asap, reset):
 
 
 @cli.command()
+@click.option('--hard', is_flag=True, default=False, show_default=True)
+def reset_schedule(hard):
+    """ Reset schedule.
+    hard reset will cancel observation currently being observed (experimental).
+    """
+
+    ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
+    if hard:
+        raise NotImplementedError
+
+
+@cli.command()
 @click.option('--mode', default=None, help='Display only a single observing mode')
 def show_schedule(mode):
     """ Print the schedule currently managed by executor.
