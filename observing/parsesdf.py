@@ -21,6 +21,8 @@ def make_sched(sdf_fn, mode='buffer'):
         sched = volt_beam_obs(obs_list, session, mode=mode)
     if session.obs_type is ObsType.fast:
         sched = fast_vis_obs(obs_list, session, mode=mode)
+    if session.obs_type is ObsType.slow:
+        sched = slow_vis_obs(obs_list, session, mode=mode)
 
     logger.info(f"Parsed {sdf_fn} into {len(sched)} submissions.")
 
@@ -176,6 +178,42 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
         cmd = f"con.start_dr(['drvf'], t0 = {start})"
         d.update({start:cmd})
         cmd = f"con.stop_dr(['drvf'])"
+        d.update({end:cmd})
+    df = pd.DataFrame(d,index = ['command'])
+    df = df.transpose()
+    df.insert(1, column='session_id', value=session.session_id)
+    df.insert(1, column='session_mode_name', value=session_mode_name)
+    return df
+
+
+def slow_vis_obs(obs_list, session, mode="buffer"):
+    """ Generate dataframe for slow visibility observing mode
+    """
+
+    if mode == "buffer":
+        startbuffer = 20
+    elif mode == "asap":
+        startbuffer = 0.
+
+    start = obs_list[0].obs_start
+    ts = obs.obs_start - startbuffer/3600/24  # do the control command  before the start of the first observation
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d = {ts:cmd}
+
+    # handy name 
+    session_mode_name = f"{session.session_id}_{session.obs_type.value}"
+    if session.beam_num is not None:
+        session_mode_name += f"{session.beam_num}"
+
+    ts += 0.1/(24*3600)
+    cmd = "con.configure_xengine(['drvs'])"
+    d = {ts:cmd}
+
+    for obs in obs_list:
+        end = obs.obs_start + duration/24/3600/1e3
+        cmd = f"con.start_dr(['drvs'], t0 = {start})"
+        d.update({start:cmd})
+        cmd = f"con.stop_dr(['drvs'])"
         d.update({end:cmd})
     df = pd.DataFrame(d,index = ['command'])
     df = df.transpose()
