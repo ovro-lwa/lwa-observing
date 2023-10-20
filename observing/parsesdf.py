@@ -160,7 +160,7 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
         startbuffer = 0.
 
     start = obs_list[0].obs_start
-    ts = obs.obs_start - startbuffer/3600/24  # do the control command  before the start of the first observation
+    ts = start - startbuffer/3600/24  # do the control command  before the start of the first observation
     cmd = f"con = control.Controller('{session.config_file}')"
     d = {ts:cmd}
 
@@ -171,10 +171,10 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
 
     ts += 0.1/(24*3600)
     cmd = "con.configure_xengine(['drvf'])"
-    d = {ts:cmd}
+    d.update({ts:cmd})
 
     for obs in obs_list:
-        end = obs.obs_start + duration/24/3600/1e3
+        end = obs.obs_start + obs.obs_dur/24/3600/1e3
         cmd = f"con.start_dr(['drvf'], t0 = {start})"
         d.update({start:cmd})
         cmd = f"con.stop_dr(['drvf'])"
@@ -196,7 +196,7 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
         startbuffer = 0.
 
     start = obs_list[0].obs_start
-    ts = obs.obs_start - startbuffer/3600/24  # do the control command  before the start of the first observation
+    ts = start - startbuffer/3600/24  # do the control command  before the start of the first observation
     cmd = f"con = control.Controller('{session.config_file}')"
     d = {ts:cmd}
 
@@ -207,10 +207,10 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
 
     ts += 0.1/(24*3600)
     cmd = "con.configure_xengine(['drvs'])"
-    d = {ts:cmd}
+    d.update({ts:cmd})
 
     for obs in obs_list:
-        end = obs.obs_start + duration/24/3600/1e3
+        end = obs.obs_start + obs.obs_dur/24/3600/1e3
         cmd = f"con.start_dr(['drvs'], t0 = {start})"
         d.update({start:cmd})
         cmd = f"con.stop_dr(['drvs'])"

@@ -65,7 +65,7 @@ def create(out_name):
     config_dir = input()
     if config_dir == "":
         print("No configuration file specified. Assuming the standard path.")
-        config_dir = "/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_calim_config.yaml"
+        config_dir = "/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml"
 
     try:
         session_preamble = make_session_preamble(sess_id, sess_mode, pi_id,pi_name,beam_num,config_dir, cal_dir)
