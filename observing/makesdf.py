@@ -140,8 +140,8 @@ def create(out_name):
             obs_count += 1
         elif inp == 'N' or 'n':
             cont = False
-            print(f"Writing out to {args.filename}")
-            f = open(args.filename,'w')
+            print(f"Writing out to {out_name}")
+            f = open(out_name,'w')
             f.write(sdf_text)
             f.close()
     return
