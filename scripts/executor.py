@@ -82,36 +82,36 @@ def runrow(rows):
         except Exception as exc:
             logger.warning(exc)
 
-ls = dsa_store.DsaStore()
-sched0 = DataFrame([])
-def sched_callback():
-    def a(event):
-        global sched0
-        mode = event['mode']
-        if mode == 'reset':
-            # option to reset schedule
-            logger.info("Resetting schedule...")
-            sched0 = DataFrame([])
-            sched0 = sched_update(sched0)
-
-        if 'filename' in event:
-            filename = event['filename']
-            if os.path.exists(filename):
-                # TODO: add mode == 'cancel' to re-parse sdf for session id and removing it from schedule in sched_update
-                sched = parsesdf.make_sched(filename, mode=mode)
-                sched.sort_index(inplace=True)
-                sched0 = sched_update([sched0, sched], mode=mode)
-        else:
-            logger.debug(f"No filename defined.")
-    return a
-ls.add_watch('/cmd/observing/submitsdf', sched_callback())
-
 
 if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
     pool = ProcessPoolExecutor(max_workers = 8)
+    ls = dsa_store.DsaStore()
+
+    sched0 = DataFrame([])
+    def sched_callback():
+        def a(event):
+            global sched0
+            mode = event['mode']
+            if mode == 'reset':
+                # option to reset schedule
+                logger.info("Resetting schedule...")
+                sched0 = DataFrame([])
+                sched0 = sched_update(sched0)
+
+            if 'filename' in event:
+                filename = event['filename']
+                if os.path.exists(filename):
+                    # TODO: add mode == 'cancel' to re-parse sdf for session id and removing it from schedule in sched_update
+                    sched = parsesdf.make_sched(filename, mode=mode)
+                    sched.sort_index(inplace=True)
+                    sched0 = sched_update([sched0, sched], mode=mode)
+            else:
+                logger.debug(f"No filename defined.")
+        return a
+    ls.add_watch('/cmd/observing/submitsdf', sched_callback())
 
     if len(sys.argv) == 2:
         logger.info(f"Initializing schedule with {sys.argv[1]}")
