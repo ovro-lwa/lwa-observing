@@ -29,7 +29,7 @@ def create(out_name):
         elif sess_mode not in MODES:
             print(f"The session mode provided is not recognized. Please give one of the following: {MODES}")
     
-    if sess_mode != "FAST":
+    if sess_mode not in  ["FAST", "SLOW"]:
         print("Provide a beam number:")
         inp = input()
         beam_num = int(inp)
@@ -40,7 +40,7 @@ def create(out_name):
         if cal_dir == '':
             cal_dir = None
         
-    elif sess_mode == "FAST":
+    elif sess_mode in ["FAST", "SLOW"]:
         beam_num = None
         cal_dir = None
 
@@ -82,9 +82,9 @@ def create(out_name):
         print("Enter the observing mode")
         obs_mode = input()
         if obs_mode == '':
-            if sess_mode == 'FAST':
+            if sess_mode in ['FAST', 'SLOW']:
                 obs_mode = None
-            elif sess_mode != 'FAST':
+            else:
                 obs_mode = 'TRK_RADEC'
                 print("No obs mode specified for beamformed observation. Assuming TRK_RADEC")
 
@@ -102,10 +102,10 @@ def create(out_name):
         print(f"Give the duration of the observation in milliseconds:")
         dur = int(input())
 
-        if sess_mode == 'POWER' or sess_mode == 'VOLT': 
+        if sess_mode in ['POWER', 'VOLT']: 
             print(f"Give the integrations time of the observation in milliseconds")
             int_time = int(input())
-        elif sess_mode == 'FAST':
+        elif sess_mode in ['FAST', 'SLOW']:
             int_time = None
         
         if obs_mode not in ephem_modes:
