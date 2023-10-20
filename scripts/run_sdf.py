@@ -150,7 +150,7 @@ def _get_sdf_id(filename):
 
 def parse_sdf(filename):
     """
-    Given an SDF beamformer filename, parse the file and return a list of
+    Given an SDF filename, parse the file and return a list of
     dictionaries that describe all of pointing and dwell times that we needed.
     
     The dictionaries contain:
