@@ -319,7 +319,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
         ts += (recording_buffer)/24/3600
         if obs.dec is None:
-            targetname = obs.obj_name if isinstance(obs.obj_name, str) else ' '.join(obs.obj_name)
+            targetname = obs.obj_name
             cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
