@@ -67,13 +67,14 @@ class Observation:
     def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None):
 
         # overload obs_mode for some targets
-        obj_name = obj_name if isinstance(obj_name, str) else ' '.join(obj_name)
-        if obj_name.lower() == 'sun':
-            self.obs_mode = 'TRK_SOL'
-        elif obj_name.lower() == 'jupiter':
-            self.obs_mode = 'TRK_JOV'
-        elif obj_name.lower() == 'moon':
-            self.obs_mode = 'TRK_LUN'
+        if obj_name is not None:
+            obj_name = obj_name if isinstance(obj_name, str) else ' '.join(obj_name)
+            if obj_name.lower() == 'sun':
+                self.obs_mode = 'TRK_SOL'
+            elif obj_name.lower() == 'jupiter':
+                self.obs_mode = 'TRK_JOV'
+            elif obj_name.lower() == 'moon':
+                self.obs_mode = 'TRK_LUN'
 
         # Check if the observing mode is one of the tracking modes:
         tracking_modes = ['TRK_RADEC', 'TRK_SOL', 'TRK_JOV','TRK_LUN']
