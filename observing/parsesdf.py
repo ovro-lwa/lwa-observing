@@ -101,7 +101,6 @@ def make_obs_list(inp:dict):
         tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
         obs_start = Time(tt, format='iso').mjd
         # define mode from target. default to that specified
-        obs_target = inp['OBSERVATIONS'][i]['OBS_TARGET']
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
 
         obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
