@@ -5,6 +5,7 @@ class ObsType(Enum):
     volt = 'VOLT'
     power = 'POWER'
     fast = 'FAST'
+    slow = 'SLOW'
 
 class Session:
     """
@@ -13,7 +14,7 @@ class Session:
     def __init__(self, obs_type, session_id, config_file = None, cal_directory = None, do_cal = True,beam_num = None):
         """
         
-        :param obs_type: defines whether the session will be for a power beam, voltage beam, or fast vis
+        :param obs_type: defines whether the session will be for a power beam, voltage beam, or slow/fast vis
         :type obs_type: str
         :param config_file: path to the configuration file, defaults to '/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml'
         :type config_file: str, optional
