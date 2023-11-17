@@ -52,7 +52,7 @@ def submit_sdf(sdffile, asap, reset):
 @click.option('--dec', default=None, help='Dec of object to track (in degrees)')
 @click.option('--obj_name', default=None, help='Name of object to track (used as alternative to RA/Dec)')
 @click.option('--int_time', default=None, help='Integration time in milliseconds')
-def create_sdf(sdffile, n_obs, sess_mode, obs_mode, obs_start, obs_dur):
+def create_sdf(sdffile, n_obs, sess_mode, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
     """ Create an SDF file.
     """
 
