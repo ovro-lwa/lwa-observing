@@ -107,10 +107,13 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
     if isinstance(obs_start, Time):
         obs_start = obs_start.isot
     elif isinstance(obs_start, str):
-        try:
-            obs_start = Time(obs_start, format='isot').isot
-        except:
-            raise Exception("Couldn't parse the observation start time")
+        if obs_start.lower() == 'now':
+            obs_start = Time.now().isot
+        else:
+            try:
+                obs_start = Time(obs_start, format='isot').isot
+            except:
+                raise Exception("Couldn't parse the observation start time")
 
     if obs_dur is None:
         obs_dur = int(input(f"Give the duration of the observation in milliseconds:"))
