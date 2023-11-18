@@ -2,6 +2,7 @@ from dsautils import dsa_store
 from astropy import time
 import sys
 import logging
+from dsautils import dsa_store
 
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
@@ -97,3 +98,5 @@ def print_sched(mode=None):
         else:
             for kk2,vv2 in dd2[mode].items():
                 logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
+
+

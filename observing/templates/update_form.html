@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Update Session</h2>
+
+<form action="/sessions/{{ session_id }}" target="/sessions/{{ session_id }}/updated">
+  <label for="pi_id">PI ID:</label><br>
+  <input type="text" id="pi_id" name="pi_id"><br>
+  <label for="session_mode">Session Mode:</label><br>
+  <input type="text" id="session_mode" name="session_mode"><br>
+  <label for="obs_target">Observation Target:</label><br>
+  <input type="text" id="obs_target" name="obs_target"><br>
+  <label for="obs_start">Observation Start:</label><br>
+  <input type="text" id="obs_start" name="obs_start"><br>
+  <input type="submit" value="Submit">
+</form>
+
+</body>
+</html>
