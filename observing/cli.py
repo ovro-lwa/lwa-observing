@@ -45,6 +45,7 @@ def submit_sdf(sdffile, asap, reset):
 @click.argument('sdffile')
 @click.option('--n_obs', default=1, help='Number of observations to create')
 @click.option('--sess_mode', default='POWER', help='Session mode (FAST, SLOW, POWER, VOLT)')
+@click.option('--beam_num', default=None, help='POWER/VOLT beam number')
 @click.option('--obs_mode', default='TRK_RADEC', help='Observation mode (e.g. TRK_RADEC, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
 @click.option('--obs_start', default=None, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
 @click.option('--obs_dur', default=None, help='Observation duration in milliseconds')
@@ -52,12 +53,12 @@ def submit_sdf(sdffile, asap, reset):
 @click.option('--dec', default=None, help='Dec of object to track (in degrees)')
 @click.option('--obj_name', default=None, help='Name of object to track (used as alternative to RA/Dec)')
 @click.option('--int_time', default=None, help='Integration time in milliseconds')
-def create_sdf(sdffile, n_obs, sess_mode, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
+def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
     """ Create an SDF file.
     """
 
-    makesdf.create(sdffile, n_obs=n_obs, sess_mode=sess_mode, obs_mode=obs_mode, obs_start=obs_start, obs_dur=obs_dur,
-                   ra=ra, dec=dec, obj_name=obj_name, int_time=int_time)
+    makesdf.create(sdffile, n_obs=n_obs, sess_mode=sess_mode, obs_mode=obs_mode, beam_num=beam_num, obs_start=obs_start,
+                   obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time)
 
 
 @cli.command()
