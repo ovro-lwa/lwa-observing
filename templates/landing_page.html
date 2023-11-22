@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" href="ovro-lwa.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        th {
+            background-color: #47a84a;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>OVRO-LWA Sessions</h2>
+
+<table>
+    <tr>
+        <th>Session ID</th>
+        <th>PI ID</th>
+        <th>Session Mode</th>
+        <th>Target</th>
+        <th>Start time</th>
+        <!-- Add more headers if there are more fields in the session -->
+    </tr>
+    {% for session in sessions %}
+    <tr>
+        <td>{{ session['session_id'] }}</td>
+        <td>{{ session['session_mode'] }}</td>
+        <td>{{ session['pi_id'] }}</td>
+        <td>{{ session['obs_target'] }}</td>
+        <td>{{ session['obs_start'] }}</td>
+        <!-- Add more cells if there are more fields in the session -->
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

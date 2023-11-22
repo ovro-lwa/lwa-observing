@@ -53,6 +53,21 @@ async def read_sessions():
 async def get_update_form(request: Request, session_id: str):
     return templates.TemplateResponse("update_form.html", {"request": request, "session_id": session_id})
 
-@app.get("/sessions/{session_id}/updated", response_class=HTMLResponse)
-async def get_landing_page(request: Request, session_id: str):
-    return templates.TemplateResponse("landing_page.html", {"request": request, "session_id": session_id})
+@app.get("/sessions", response_class=HTMLResponse)
+async def get_all_sessions(request: Request):
+    conn = sqlite3.connect('sessions.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM sessions")
+    rows = c.fetchall()
+    conn.close()
+    sessions = [dict(pi_id=row[0], session_mode=row[1], session_id=row[2], obs_target=row[3], obs_start=row[4]) for row in rows]
+    return templates.TemplateResponse("landing_page.html", {"request": request, "sessions": sessions})
+
+def add_session(session: Session):
+    conn = sqlite3.connect('sessions.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?)",
+              (session.pi_id, session.session_mode, session.session_id, session.obs_target, session.obs_start))
+    conn.commit()
+    conn.close()
+
