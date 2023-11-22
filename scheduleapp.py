@@ -49,10 +49,6 @@ async def read_sessions():
     conn.close()
     return rows
 
-@app.get("/sessions/{session_id}/update", response_class=HTMLResponse)
-async def get_update_form(request: Request, session_id: str):
-    return templates.TemplateResponse("update_form.html", {"request": request, "session_id": session_id})
-
 @app.get("/sessions", response_class=HTMLResponse)
 async def get_all_sessions(request: Request):
     conn = sqlite3.connect('sessions.db')
