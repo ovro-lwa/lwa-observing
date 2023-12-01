@@ -1,4 +1,4 @@
-__all__ = ['parsesdf', 'classes', 'schedule']
+__all__ = ['parsesdf', 'classes', 'makesdf']
 
 from observing import *
 

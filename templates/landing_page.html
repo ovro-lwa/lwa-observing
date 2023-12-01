@@ -24,32 +24,56 @@
             color: white;
         }
     </style>
+
+    <script>
+        window.onload = function() {
+            var table = document.getElementById("SessionTable");
+            if (table) {
+                for (var i = 0; i < table.rows.length; i++) {
+                    table.rows[i].onmouseover = function() {
+                    this.style.backgroundColor = "#";
+                    };
+                table.rows[i].onmouseout = function() {
+                    this.style.backgroundColor = "";
+                    };
+                }
+            }
+        };
+    </script>
 </head>
 
 <body>
 
-<h2>OVRO-LWA Sessions</h2>
+<h2>OVRO-LWA Schedule and Data</h2>
 
-<table>
-    <tr>
-        <th>Session ID</th>
-        <th>PI ID</th>
-        <th>Session Mode</th>
-        <th>Target</th>
-        <th>Start time</th>
-        <!-- Add more headers if there are more fields in the session -->
-    </tr>
-    {% for session in sessions %}
-    <tr>
-        <td>{{ session['session_id'] }}</td>
-        <td>{{ session['session_mode'] }}</td>
-        <td>{{ session['pi_id'] }}</td>
-        <td>{{ session['obs_target'] }}</td>
-        <td>{{ session['obs_start'] }}</td>
-        <!-- Add more cells if there are more fields in the session -->
-    </tr>
-    {% endfor %}
-</table>
+<div style="height: 400px; overflow-y: auto;">
+    <table id="SessionTable">
+        <tr>
+            <th>PI ID</th>
+            <th>PI Name</th>
+            <th>Project ID</th>
+            <th>Session ID</th>
+            <th>Session Mode</th>
+            <th>Session DRX Beam</th>
+            <th>Configuration File</th>
+            <th>Calibration Directory</th>
+            <th>Status</th>
+        </tr>
+        {% for session in sessions %}
+        <tr>
+            <td>{{ session['PI_ID'] }}</td>
+            <td>{{ session['PI_NAME'] }}</td>
+            <td>{{ session['PROJECT_ID'] }}</td>
+            <td>{{ session['SESSION_ID'] }}</td>
+            <td>{{ session['SESSION_MODE'] }}</td>
+            <td>{{ session['SESSION_DRX_BEAM'] }}</td>
+            <td>{{ session['CONFIG_FILE'] }}</td>
+            <td>{{ session['CAL_DIR'] }}</td>
+            <td>{{ session['STATUS'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 
 </body>
 </html>
