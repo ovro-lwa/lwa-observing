@@ -13,6 +13,7 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
+from mnc import control  # inherited by threads
 from observing import parsesdf, schedule
 from observing.obsstate import add_session
 from dsautils import dsa_store
