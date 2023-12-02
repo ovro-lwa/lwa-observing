@@ -45,42 +45,42 @@
             }, 500);  // wait 500 milliseconds before executing the function
         };
     </script>
-<script>
-    function sortsessionsTable(n) {
-        var table, rows, switching, i, x, y, shouldSwitch;
-        table = document.getElementById("SessionsTable");
-        // Make dir a property of the function to preserve its value between function calls
-        if (typeof sortsessionsTable.dir == 'undefined' ) {
-            sortsessionsTable.dir = "desc";
-        }
-        do {
-            switching = false;
-            rows = table.rows;
-            for (i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                x = rows[i].getElementsByTagName("TD")[n];
-                y = rows[i + 1].getElementsByTagName("TD")[n];
-                if (sortsessionsTable.dir == "asc") {
-                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (sortsessionsTable.dir == "desc") {
-                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
+    <script>
+        function sortsessionsTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("SessionsTable");
+            // Make dir a property of the function to preserve its value between function calls
+            if (typeof sortsessionsTable.dir == 'undefined' ) {
+                sortsessionsTable.dir = "desc";
+            }
+            do {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (sortsessionsTable.dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (sortsessionsTable.dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
                     }
                 }
-            }
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-            }
-        } while (switching);
-        // Toggle the direction only after the sorting is complete
-        sortsessionsTable.dir = sortsessionsTable.dir == "asc" ? "desc" : "asc";
-    }
-</script>
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            } while (switching);
+            // Toggle the direction only after the sorting is complete
+            sortsessionsTable.dir = sortsessionsTable.dir == "asc" ? "desc" : "asc";
+        }
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Wait for the dynamic content to load

@@ -27,43 +27,45 @@
     
     <script>
         window.onload = function() {
-        setTimeout(function() {
-            var tables = ["CalibrationsTable", "SettingsTable", "SessionsTable"];
-            for (var t = 0; t < tables.length; t++) {
-                var table = document.getElementById(tables[t]);
-                if (table) {
-                    for (var i = 0; i < table.rows.length; i++) {
-                        table.rows[i].onmouseover = function() {
-                            this.style.backgroundColor = "#aaaaaa";
-                        };
-                        table.rows[i].onmouseout = function() {
-                            this.style.backgroundColor = "";
-                        };
+            setTimeout(function() {
+                var tables = ["CalibrationsTable", "SettingsTable", "SessionsTable"];
+                for (var t = 0; t < tables.length; t++) {
+                    var table = document.getElementById(tables[t]);
+                    if (table) {
+                        for (var i = 0; i < table.rows.length; i++) {
+                            table.rows[i].onmouseover = function() {
+                                this.style.backgroundColor = "#aaaaaa";
+                            };
+                            table.rows[i].onmouseout = function() {
+                                this.style.backgroundColor = "";
+                            };
+                        }
                     }
                 }
-            }
-        }, 500);  // wait 500 milliseconds before executing the function
-    };
+            }, 500);  // wait 500 milliseconds before executing the function
+        };
     </script>
     <script>
         function sortsettingsTable(n) {
-            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            var table, rows, switching, i, x, y, shouldSwitch;
             table = document.getElementById("SettingsTable");
-            switching = true;
-            dir = "desc";
-            while (switching) {
+            // Make dir a property of the function to preserve its value between function calls
+            if (typeof sortsettingsTable.dir == 'undefined' ) {
+                sortsettingsTable.dir = "desc";
+            }
+            do {
                 switching = false;
                 rows = table.rows;
                 for (i = 1; i < (rows.length - 1); i++) {
                     shouldSwitch = false;
                     x = rows[i].getElementsByTagName("TD")[n];
                     y = rows[i + 1].getElementsByTagName("TD")[n];
-                    if (dir == "asc") {
+                    if (sortsettingsTable.dir == "asc") {
                         if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
                         }
-                    } else if (dir == "desc") {
+                    } else if (sortsettingsTable.dir == "desc") {
                         if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
@@ -73,22 +75,18 @@
                 if (shouldSwitch) {
                     rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                     switching = true;
-                    switchcount++;
-                } else {
-                    if (switchcount == 0 && dir == "asc") {
-                        dir = "desc";
-                        switching = true;
-                    }
                 }
-            }
+            } while (switching);
+            // Toggle the direction only after the sorting is complete
+            sortsettingsTable.dir = sortsettingsTable.dir == "asc" ? "desc" : "asc";
         }
     </script>
 </head>
 
 <body>
-
-<h2>Settings</h2>
-
+    
+    <h2>Settings</h2>
+    
     <div style="height: 200px; overflow-y: auto;">
         <table id="SettingsTable">
             <tr>
