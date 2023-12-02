@@ -93,13 +93,15 @@
     <table id="CalibrationsTable">
         <tr>
             <th onclick="sortcalibrationsTable(0)">Time Loaded</th>
-            <th onclick="sortcalibrationsTable(0)">Filename</th>
+            <th onclick="sortcalibrationsTable(1)">Filename</th>
+            <th onclick="sortcalibrationsTable(2)">Beam</th>
             <!-- Add more headers here if your calibrations table has more columns -->
         </tr>
         {% for calibration in calibrations %}
         <tr>
             <td>{{ calibration.time_loaded }}</td>
             <td>{{ calibration.filename }}</td>
+            <td>{{ calibration.beam }}</td>
             <!-- Add more data fields here if your calibrations table has more columns -->
         </tr>
         {% endfor %}
