@@ -14,8 +14,7 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 from pandas import concat, DataFrame
 from astropy.time import Time
 from mnc import control  # inherited by threads
-from observing import parsesdf, schedule
-from observing.obsstate import add_session
+from observing import parsesdf, schedule, obsstate
 from dsautils import dsa_store
 import logging
 
@@ -60,6 +59,10 @@ def submit_next(sched, pool):
         rows = sched[sched.session_id == row.session_id]
         fut = pool.submit(runrow, rows)
         schedule.put_submitted(rows)
+        try:
+            obsstate.update_session(row['session_id'], 'observing')
+        except Exception as exc:
+            logger.warning("Could not update session status.")
         sched.drop(index=rows.index, axis=0, inplace=True)
         return fut
     else:
@@ -67,7 +70,7 @@ def submit_next(sched, pool):
 
 
 def runrow(rows):
-    """ Runs a command from the schedule
+    """ Runs a list of rows for a session_id in the schedule
     """
 
     for mjd, row in rows.iterrows():
@@ -82,6 +85,13 @@ def runrow(rows):
             exec(row.command)
         except Exception as exc:
             logger.warning(exc)
+
+    # if loop completes, then set session to completed
+    try:
+        obsstate.update_session(row['session_id'], 'completed')
+    except Exception as exc:
+        logger.warning("Could not update session status.")
+
 
 
 if __name__ == "__main__":
@@ -114,7 +124,7 @@ if __name__ == "__main__":
 
                     # add session to obsstate
                     try:
-                        add_session(filename)
+                        obsstate.add_session(filename)
                         logger.info(f'added session {filename}')
                     except Exception as exc:
                         logger.warning("Could not add session to obsstate.")
