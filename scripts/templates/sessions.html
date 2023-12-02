@@ -49,12 +49,11 @@
     function sortsessionsTable(n) {
         var table, rows, switching, i, x, y, shouldSwitch;
         table = document.getElementById("SessionsTable");
-        switching = true;
         // Make dir a property of the function to preserve its value between function calls
         if (typeof sortsessionsTable.dir == 'undefined' ) {
             sortsessionsTable.dir = "desc";
         }
-        while (switching) {
+        do {
             switching = false;
             rows = table.rows;
             for (i = 1; i < (rows.length - 1); i++) {
@@ -77,15 +76,9 @@
                 rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                 switching = true;
             }
-            // If no switching has been done AND the direction is "asc", set the direction to "desc"
-            if (!switching && sortsessionsTable.dir == "asc") {
-                sortsessionsTable.dir = "desc";
-                switching = true;
-            } else if (!switching && sortsessionsTable.dir == "desc") {
-                sortsessionsTable.dir = "asc";
-                switching = true;
-            }
-        }
+        } while (switching);
+        // Toggle the direction only after the sorting is complete
+        sortsessionsTable.dir = sortsessionsTable.dir == "asc" ? "desc" : "asc";
     }
 </script>
     <script>
