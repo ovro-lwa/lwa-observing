@@ -96,22 +96,24 @@
                         if (table) {
                             for (var i = 1; i < table.rows.length; i++) {  // start from the second row to exclude the header
                                 var row = table.rows[i];
-                                var cell = row.cells[3];  // change the index to the column you want to filter
-                                if (cell) {
+                                var cells = row.cells;
+                                var rowContainsFilter = Array.from(cells).some(function(cell) {
                                     var cellValue = cell.textContent || cell.innerText;
-                                    if (cellValue.indexOf(filter) > -1) {
-                                        row.style.display = "";  // show the row
-                                    } else {
-                                        row.style.display = "none";  // hide the row
-                                    }
+                                    return cellValue.indexOf(filter) > -1;
+                                });
+                                if (rowContainsFilter) {
+                                    row.style.display = "";  // show the row
+                                } else {
+                                    row.style.display = "none";  // hide the row
                                 }
                             }
                         }
-                    };
-                }
-            }, 1000);  // Adjust the delay as needed
-        });
-    </script>
+                    }
+                };
+            }
+        }, 1000);  // Adjust the delay as needed
+    });
+</script>
 </script>
 
 </head>
@@ -121,7 +123,7 @@
     <h2>Sessions</h2>
     
     <form id="filterForm">
-        <label for="filter">Session ID Filter:</label>
+        <label for="filter">Select on string:</label>
         <input type="text" id="filter" name="filter">
         <input type="submit" value="Apply Filter">
     </form>
