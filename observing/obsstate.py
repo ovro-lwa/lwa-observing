@@ -117,7 +117,7 @@ def add_settings(filename: str):
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO settings VALUES (?, ?, ?, ?)",
-              (t_now, user, os.path.basename(ss.filename), 0))   # TODO: figure out how to get time from file
+              (t_now, user, os.path.basename(filename), 0))   # TODO: figure out how to get time from file
     conn.commit()
     conn.close()
 
