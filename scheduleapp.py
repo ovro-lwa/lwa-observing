@@ -31,14 +31,20 @@ class Session(BaseModel):
     STATUS: str  # e.g., "scheduled" "completed"
 
 
-class Settings(BaseModel):   # TODO: load this from mnc.settings load function
+class Settings(BaseModel):
     time_loaded: str
     user: str
     filename: str
     time_file: str
 
 
-class Calibration(BaseModel):  # TODO: load this from mnc xengine cal load function
+class Calibration(BaseModel):
+    time_loaded: str
+    filename: str
+    beam: str
+
+
+class Product(BaseModel):
     time_loaded: str
     filename: str
     beam: str
@@ -217,7 +223,7 @@ def reset_table(table):
     conn.close()
 
 
-@app.get("/combined", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def get_combined(request: Request):
     # Fetch data from the calibrations table
     calibrations_rows = read_calibrations()
