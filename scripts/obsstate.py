@@ -6,7 +6,9 @@ from fastapi.staticfiles import StaticFiles
 from observing import obsstate as obs
 import os
 import fnmatch
+import logging
 
+logging.basicConfig(level=logging.INFO)  # This configures the root logger
 
 app = FastAPI()
 image_dir = os.path.dirname(os.path.realpath(__file__))

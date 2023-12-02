@@ -18,7 +18,7 @@ from observing.obsstate import add_session
 from dsautils import dsa_store
 import logging
 
-logger = logging.getLogger('observing')
+logging.basicConfig(level=logging.INFO)  # This configures the root logger
 
 
 def sched_update(sched, mode='buffer'):

@@ -6,7 +6,7 @@ import sqlite3
 from observing import parsesdf
 import logging
 
-logger = logging.getLogger('observing')
+logger = logging.getLogger(__name__)
 
 
 DBPATH = '/opt/devel/pipeline/ovrolwa.db'
