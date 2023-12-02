@@ -13,7 +13,8 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
-from observing import parsesdf, schedule, obsstate as obs
+from observing import parsesdf, schedule
+from observing.obsstate import add_session
 from dsautils import dsa_store
 import logging
 
@@ -89,6 +90,8 @@ if __name__ == "__main__":
     pool = ProcessPoolExecutor(max_workers = 8)
     ls = dsa_store.DsaStore()
 
+    logger.info("Set up ProcessPool and DsaStore")
+
     sched0 = DataFrame([])
     def sched_callback():
         def a(event):
@@ -110,9 +113,11 @@ if __name__ == "__main__":
 
                     # add session to obsstate
                     try:
-                        obs.add_session(filename)
-                    except:
+                        add_session(filename)
+                        logger.info(f'added session {filename}')
+                    except Exception as exc:
                         logger.warning("Could not add session to obsstate.")
+                        raise exc
                 else:
                     logger.warning(f"File {filename} does not exist.")
             else:

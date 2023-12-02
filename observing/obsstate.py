@@ -4,9 +4,12 @@ import time
 from pydantic import BaseModel
 import sqlite3
 from observing import parsesdf
+import logging
+
+logger = logging.getLogger('observing')
 
 
-DBPATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ovrolwa.db')
+DBPATH = '/opt/devel/pipeline/ovrolwa.db'
 
 
 class Session(BaseModel):

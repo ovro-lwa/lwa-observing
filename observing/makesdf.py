@@ -4,6 +4,10 @@ from astropy.time import Time
 from datetime import timedelta
 import random
 import os
+import logging
+
+logger = logging.getLogger('observing')
+
 
 MODES = ['POWER', 'VOLT', 'FAST', 'SLOW']
 EPHEM_MODES = ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']
