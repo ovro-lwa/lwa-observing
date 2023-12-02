@@ -30,7 +30,7 @@ class Settings(BaseModel):
     time_file: str
 
 
-class Calibration(BaseModel):
+class Calibrations(BaseModel):
     time_loaded: str
     filename: str
     beam: str
