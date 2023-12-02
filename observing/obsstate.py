@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: figure out how to make it r/w for all users
 #DBPATH = 'file:/opt/devel/pipeline/ovrolwa.db?mode=rw'
-DBPATH = 'file:/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db?mode=rw'
+DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
 
 class Session(BaseModel):
     PI_ID: str
@@ -65,7 +65,7 @@ def create_db():
 
 def read_sessions():
     """Read all sessions from the database"""
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT * FROM sessions")
     rows = c.fetchall()
@@ -75,7 +75,7 @@ def read_sessions():
 
 def read_settings():
     """Read all settings from the database"""
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT * FROM settings")
     rows = c.fetchall()
@@ -85,7 +85,7 @@ def read_settings():
 
 def read_calibrations():
     """Read all calibrations from the database"""
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT * FROM calibrations")
     rows = c.fetchall()
@@ -102,7 +102,7 @@ def add_session(sdffile: str):
         if isinstance(value, list):
             dd['SESSION'][key] = ', '.join(map(str, value))
     session = Session(**dd['SESSION'], STATUS='scheduled')
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
               (session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID, session.SESSION_MODE, 
@@ -117,7 +117,7 @@ def add_settings(filename: str):
     user = getpass.getuser()
     t_now = time.asctime(time.gmtime(time.time()))
 
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO settings VALUES (?, ?, ?, ?)",
               (t_now, user, os.path.basename(filename), 0))   # TODO: figure out how to get time from file
@@ -128,7 +128,7 @@ def add_settings(filename: str):
 def add_calibrations(filename, beam):
     """Add a new calibration to the calibrations table."""
     time_loaded = time.asctime(time.gmtime(time.time()))
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     try:
         c.execute("BEGIN")
@@ -142,7 +142,7 @@ def add_calibrations(filename, beam):
 
 def read_latest_setting():
     """Read the most recent setting from the database."""
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     conn.row_factory = sqlite3.Row  # This enables column access by name: row['column_name'] 
     c = conn.cursor()
     c.execute("SELECT * FROM settings ORDER BY time_loaded DESC LIMIT 1")
@@ -154,7 +154,7 @@ def read_latest_setting():
 
 def update_session(session_id, status):
     """ Update a status of a session in the database. """
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("UPDATE sessions SET status = ? WHERE SESSION_ID = ?", (status, session_id))
     conn.commit()
@@ -163,7 +163,7 @@ def update_session(session_id, status):
 
 def reset_table(table):
     """Reset the sessions table."""
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute(f"DROP TABLE IF EXISTS {table}")
     if table == 'sessions':
