@@ -23,7 +23,7 @@ async def startup_event():
 @app.get("/sessions", response_class=HTMLResponse)
 async def get_all_sessions(request: Request):
     rows = obs.read_sessions()
-    sessions = [obs.Sessions(PI_ID=row[0], PI_NAME=row[1], PROJECT_ID=row[2], SESSION_ID=row[3], SESSION_MODE=row[4], SESSION_DRX_BEAM=row[5], CONFIG_FILE=row[6], CAL_DIR=row[7], STATUS=row[8]) for row in rows]
+    sessions = [obs.Session(PI_ID=row[0], PI_NAME=row[1], PROJECT_ID=row[2], SESSION_ID=row[3], SESSION_MODE=row[4], SESSION_DRX_BEAM=row[5], CONFIG_FILE=row[6], CAL_DIR=row[7], STATUS=row[8]) for row in rows]
     return templates.TemplateResponse("sessions.html", {"request": request, "sessions": sessions})
 
 
@@ -58,7 +58,7 @@ async def get_combined(request: Request):
                 for row in obs.read_settings()]
 
     # Fetch data from the sessions table
-    sessions = [obs.Sessions(PI_ID=row[0], PI_NAME=row[1], PROJECT_ID=row[2], SESSION_ID=row[3], SESSION_MODE=row[4], SESSION_DRX_BEAM=row[5], CONFIG_FILE=row[6], CAL_DIR=row[7], STATUS=row[8]) 
+    sessions = [obs.Session(PI_ID=row[0], PI_NAME=row[1], PROJECT_ID=row[2], SESSION_ID=row[3], SESSION_MODE=row[4], SESSION_DRX_BEAM=row[5], CONFIG_FILE=row[6], CAL_DIR=row[7], STATUS=row[8]) 
                 for row in obs.read_sessions()]
 
     # Render the data into three tables
