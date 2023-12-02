@@ -45,7 +45,7 @@ class Product(BaseModel):
 
 def create_db():
     """Create database if it doesn't exist."""
-    conn = sqlite3.connect(DBPATH, uri=True)
+    conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS sessions
