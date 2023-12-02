@@ -9,6 +9,7 @@ import fnmatch
 import logging
 
 logging.basicConfig(level=logging.INFO)  # This configures the root logger
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 image_dir = os.path.dirname(os.path.realpath(__file__))

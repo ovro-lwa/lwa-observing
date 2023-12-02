@@ -19,7 +19,7 @@ from dsautils import dsa_store
 import logging
 
 logging.basicConfig(level=logging.INFO)  # This configures the root logger
-
+logger = logging.getLogger(__name__)
 
 def sched_update(sched, mode='buffer'):
     """ Take a schedule or list of schedules, concatenate and sort them.

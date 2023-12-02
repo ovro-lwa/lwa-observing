@@ -8,7 +8,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 DBPATH = '/opt/devel/pipeline/ovrolwa.db'
 
 
