@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" href="ovro-lwa.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        th {
+            background-color: #47a84a;
+            color: white;
+        }
+    </style>
+
+    <script>
+        window.onload = function() {
+            var table = document.getElementById("SessionsTable");
+            if (table) {
+                for (var i = 0; i < table.rows.length; i++) {
+                    table.rows[i].onmouseover = function() {
+                        this.style.backgroundColor = "#aaaaaa";  // specify a color here
+                    };
+                    table.rows[i].onmouseout = function() {
+                        this.style.backgroundColor = "";
+                    };
+                }
+            }
+        };
+    </script>
+    <script>
+        function sortTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById("SessionsTable");
+            switching = true;
+            dir = "asc";
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+<h2>Sessions</h2>
+
+<div style="height: 400px; overflow-y: auto;">
+    <table id="SessionsTable">
+        <tr>
+            <th onclick="sortTable(0)">PI_ID</th>
+            <th onclick="sortTable(1)">PI_NAME</th>
+            <th onclick="sortTable(2)">PROJECT_ID</th>
+            <th onclick="sortTable(3)">SESSION_ID</th>
+            <th onclick="sortTable(4)">SESSION_MODE</th>
+            <th onclick="sortTable(5)">SESSION_DRX_BEAM</th>
+            <th onclick="sortTable(6)">CONFIG_FILE</th>
+            <th onclick="sortTable(7)">CAL_DIR</th>
+            <th onclick="sortTable(8)">STATUS</th>
+        </tr>
+        {% for session in sessions %}
+        <tr>
+            <td>{{ session['PI_ID'] }}</td>
+            <td>{{ session['PI_NAME'] }}</td>
+            <td>{{ session['PROJECT_ID'] }}</td>
+            <td>{{ session['SESSION_ID'] }}</td>
+            <td>{{ session['SESSION_MODE'] }}</td>
+            <td>{{ session['SESSION_DRX_BEAM'] }}</td>
+            <td>{{ session['CONFIG_FILE'] }}</td>
+            <td>{{ session['CAL_DIR'] }}</td>
+            <td>{{ session['STATUS'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>

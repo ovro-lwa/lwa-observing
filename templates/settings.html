@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" href="ovro-lwa.ico" type="image/x-icon">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        th {
+            background-color: #47a84a;
+            color: white;
+        }
+    </style>
+    
+    <script>
+        window.onload = function() {
+            var table = document.getElementById("SettingsTable");
+            if (table) {
+                for (var i = 0; i < table.rows.length; i++) {
+                    table.rows[i].onmouseover = function() {
+                        this.style.backgroundColor = "#aaaaaa";  // specify a color here
+                    };
+                    table.rows[i].onmouseout = function() {
+                        this.style.backgroundColor = "";
+                    };
+                }
+            }
+        };
+    </script>
+    <script>
+        function sortTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById("SettingsTable");
+            switching = true;
+            dir = "asc";
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+<h2>Settings</h2>
+
+    <div style="height: 400px; overflow-y: auto;">
+        <table id="SettingsTable">
+            <tr>
+                <th onclick="sortTable(0)">Time Loaded</th>
+                <th onclick="sortTable(1)">User</th>
+                <th onclick="sortTable(2)">Filename</th>
+                <th onclick="sortTable(3)">Time in File</th>
+            </tr>
+            {% for setting in settings %}
+            <tr>
+                <td>{{ setting.time_loaded }}</td>
+                <td>{{ setting.user }}</td>
+                <td>{{ setting.filename }}</td>
+                <td>{{ setting.time_file }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

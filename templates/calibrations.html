@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        th {
+            background-color: #47a84a;
+            color: white;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<h2>Calibrations</h2>
+
+<div style="height: 400px; overflow-y: auto;">
+    <table id="CalibrationsTable">
+        <tr>
+            <th>Time Loaded</th>
+            <th>Filename</th>
+            <!-- Add more headers here if your calibrations table has more columns -->
+        </tr>
+        {% for calibration in calibrations %}
+        <tr>
+            <td>{{ calibration.time_loaded }}</td>
+            <td>{{ calibration.filename }}</td>
+            <!-- Add more data fields here if your calibrations table has more columns -->
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>
