@@ -13,9 +13,8 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
-from observing import parsesdf, schedule
+from observing import parsesdf, schedule, obsstate as obs
 from dsautils import dsa_store
-from mnc import control
 import logging
 
 logger = logging.getLogger('observing')
@@ -108,6 +107,14 @@ if __name__ == "__main__":
                     sched = parsesdf.make_sched(filename, mode=mode)
                     sched.sort_index(inplace=True)
                     sched0 = sched_update([sched0, sched], mode=mode)
+
+                    # add session to obsstate
+                    try:
+                        obs.add_session(filename)
+                    except:
+                        logger.warning("Could not add session to obsstate.")
+                else:
+                    logger.warning(f"File {filename} does not exist.")
             else:
                 logger.debug(f"No filename defined.")
         return a
