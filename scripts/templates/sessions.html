@@ -54,6 +54,7 @@
             while (switching) {
                 switching = false;
                 rows = table.rows;
+                var switchcount = 0;
                 for (i = 1; i < (rows.length - 1); i++) {
                     shouldSwitch = false;
                     x = rows[i].getElementsByTagName("TD")[n];
