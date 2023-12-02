@@ -3,7 +3,6 @@ import getpass
 import time
 from pydantic import BaseModel
 import sqlite3
-from mnc import settings
 from observing import parsesdf
 
 
@@ -114,12 +113,11 @@ def add_settings(filename: str):
     assert os.path.exists(filename), f"{filename} does not exist"
     user = getpass.getuser()
     t_now = time.asctime(time.gmtime(time.time()))
-    ss = settings.Settings(filename)
 
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO settings VALUES (?, ?, ?, ?)",
-              (t_now, user, os.path.basename(ss.filename), ss.config['time']))
+              (t_now, user, os.path.basename(ss.filename), 0))   # TODO: figure out how to get time from file
     conn.commit()
     conn.close()
 
