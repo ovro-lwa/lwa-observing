@@ -44,45 +44,49 @@
 };
     </script>
 
-    <script>
-        function sortcalibrationsTable(n) {
-            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-            table = document.getElementById("CalibrationsTable");
-            switching = true;
-            dir = "desc";
-            while (switching) {
-                switching = false;
-                rows = table.rows;
-                for (i = 1; i < (rows.length - 1); i++) {
-                    shouldSwitch = false;
-                    x = rows[i].getElementsByTagName("TD")[n];
-                    y = rows[i + 1].getElementsByTagName("TD")[n];
-                    if (dir == "asc") {
-                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    } else if (dir == "desc") {
-                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                            shouldSwitch = true;
-                            break;
-                        }
+<script>
+    function sortcalibrationsTable(n) {
+        var table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("CalibrationsTable");
+        switching = true;
+        // Make dir a property of the function to preserve its value between function calls
+        if (typeof sortcalibrationsTable.dir == 'undefined' ) {
+            sortcalibrationsTable.dir = "desc";
+        }
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+                if (sortcalibrationsTable.dir == "asc") {
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
                     }
-                }
-                if (shouldSwitch) {
-                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                    switching = true;
-                    switchcount++;
-                } else {
-                    if (switchcount == 0 && dir == "asc") {
-                        dir = "desc";
-                        switching = true;
+                } else if (sortcalibrationsTable.dir == "desc") {
+                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
                     }
                 }
             }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+            // If no switching has been done AND the direction is "asc", set the direction to "desc"
+            if (!switching && sortcalibrationsTable.dir == "asc") {
+                sortcalibrationsTable.dir = "desc";
+                switching = true;
+            } else if (!switching && sortcalibrationsTable.dir == "desc") {
+                sortcalibrationsTable.dir = "asc";
+                switching = true;
+            }
         }
-    </script>
-
+    }
+</script>
 </head>
 
 <body>
