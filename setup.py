@@ -19,6 +19,8 @@ setup(name='lwa-observing',
           "click",
           "pandas",
           "mnc-python",
-          "dsa110-pyutils"
+          "dsa110-pyutils",
+          "uvicorn",
+          "fastapi"
       ],
       zip_safe=False)
