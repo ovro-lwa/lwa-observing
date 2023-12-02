@@ -129,10 +129,15 @@ def add_calibrations(filename, beam):
     time_loaded = time.asctime(time.gmtime(time.time()))
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (time_loaded, filename, beam))
-    conn.commit()
-    conn.close()
-
+    try:
+        c.execute("BEGIN")
+        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (time_loaded, filename, beam))
+        c.execute("COMMIT")
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e.args[0]}")
+        c.execute("ROLLBACK")
+    finally:
+        conn.close()
 
 def read_latest_setting():
     """Read the most recent setting from the database."""
