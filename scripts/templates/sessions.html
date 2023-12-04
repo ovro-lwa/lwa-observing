@@ -127,7 +127,7 @@
     <div style="height: 200px; overflow-y: auto;">
         <table id="SessionsTable">
             <tr>
-                <th onclick="sortsessionsTable(0)">time_loaded</th>
+                <th onclick="sortsessionsTable(0)">Time Loaded</th>
                 <th onclick="sortsessionsTable(1)">PI_ID</th>
                 <th onclick="sortsessionsTable(2)">PI_NAME</th>
                 <th onclick="sortsessionsTable(3)">PROJECT_ID</th>
@@ -140,7 +140,7 @@
             </tr>
             {% for session in sessions %}
             <tr>
-                <td>{{ session['Time Loaded'] }}</td>
+                <td>{{ session['time_loaded'] }}</td>
                 <td>{{ session['PI_ID'] }}</td>
                 <td>{{ session['PI_NAME'] }}</td>
                 <td>{{ session['PROJECT_ID'] }}</td>
