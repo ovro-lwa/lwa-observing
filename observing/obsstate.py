@@ -1,6 +1,7 @@
 import os
 import getpass
 import time
+from astropy.time import Time
 from pydantic import BaseModel
 import sqlite3
 from observing import parsesdf
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
 
 class Session(BaseModel):
+    time_loaded: str
     PI_ID: str
     PI_NAME: str
     PROJECT_ID: str
@@ -28,7 +30,6 @@ class Settings(BaseModel):
     time_loaded: str
     user: str
     filename: str
-    time_file: str
 
 
 class Calibrations(BaseModel):
@@ -49,7 +50,7 @@ def create_db():
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS sessions
-        (PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+        (PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, (SESSION)_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
     ''')
     c.execute('''
         CREATE TABLE IF NOT EXISTS settings
@@ -97,11 +98,12 @@ def add_session(sdffile: str):
     """Parse SDF to create and add new session to the database."""
     assert os.path.exists(sdffile), f"{sdffile} does not exist"
     dd = parsesdf.sdf_to_dict(sdffile)
+    now = Time.now()
     # convert lists to comma-separated strings
     for key, value in dd['SESSION'].items():
         if isinstance(value, list):
             dd['SESSION'][key] = ', '.join(map(str, value))
-    session = Session(**dd['SESSION'], STATUS='scheduled')
+    session = Session(**dd['SESSION'], time_loaded=now.mjd, STATUS='scheduled')
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -115,24 +117,25 @@ def add_settings(filename: str):
     """Add settings to the database."""
     assert os.path.exists(filename), f"{filename} does not exist"
     user = getpass.getuser()
-    t_now = time.asctime(time.gmtime(time.time()))
+    now = Time.now()
 
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO settings VALUES (?, ?, ?, ?)",
-              (t_now, user, os.path.basename(filename), 0))   # TODO: figure out how to get time from file
+              (now.mjd, user, os.path.basename(filename)))
     conn.commit()
     conn.close()
 
 
 def add_calibrations(filename, beam):
     """Add a new calibration to the calibrations table."""
-    time_loaded = time.asctime(time.gmtime(time.time()))
+    now = Time.now()
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     try:
         c.execute("BEGIN")
-        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (time_loaded, filename, beam))
+        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)",
+                  (now.mjd, filename, beam))
         c.execute("COMMIT")
     except sqlite3.Error as e:
         print(f"An error occurred: {e.args[0]}")
