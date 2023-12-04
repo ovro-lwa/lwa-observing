@@ -106,7 +106,7 @@ def add_session(sdffile: str):
     session = Session(**dd['SESSION'], time_loaded=now.mjd, STATUS='scheduled')
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
               (session.time_loaded, session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID,
                session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,
                session.STATUS))
