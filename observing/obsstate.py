@@ -68,7 +68,7 @@ def read_sessions():
     """Read all sessions from the database"""
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    c.execute("SELECT * FROM sessions")
+    c.execute("SELECT * FROM sessions ORDER BY time_loaded DESC")
     rows = c.fetchall()
     conn.close()
     return rows
@@ -78,7 +78,7 @@ def read_settings():
     """Read all settings from the database"""
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    c.execute("SELECT * FROM settings")
+    c.execute("SELECT * FROM settings ORDER BY time_loaded DESC")
     rows = c.fetchall()
     conn.close()
     return rows
@@ -88,7 +88,7 @@ def read_calibrations():
     """Read all calibrations from the database"""
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    c.execute("SELECT * FROM calibrations")
+    c.execute("SELECT * FROM calibrations ORDER BY time_loaded DESC")
     rows = c.fetchall()
     conn.close()
     return rows
