@@ -10,8 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # TODO: figure out how to make it r/w for all users
-#DBPATH = 'file:/opt/devel/pipeline/ovrolwa.db?mode=rw'
-DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
+DBPATH = '/opt/devel/pipeline/ovrolwa.db'
+#DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
 
 class Session(BaseModel):
     time_loaded: str
@@ -50,7 +50,7 @@ def create_db():
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS sessions
-        (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, (SESSION)_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+        (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
     ''')
     c.execute('''
         CREATE TABLE IF NOT EXISTS settings
