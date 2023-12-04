@@ -40,6 +40,11 @@ def sched_update(sched, mode='buffer'):
                         include.append(s0)
                     else:
                         logger.warning(f"Removing session starting at {s0.index[0]}")
+                        try:
+                            obsstate.update_session(s0.session_id, 'skipped')
+                        except Exception as exc:
+                            logger.warning("Could not update session status.")
+
             sched = concat(include)
         
     sched.sort_index(inplace=True)
