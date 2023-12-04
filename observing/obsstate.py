@@ -50,7 +50,7 @@ def create_db():
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS sessions
-        (PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, (SESSION)_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+        (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, (SESSION)_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
     ''')
     c.execute('''
         CREATE TABLE IF NOT EXISTS settings
@@ -107,8 +107,9 @@ def add_session(sdffile: str):
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              (session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID, session.SESSION_MODE, 
-               session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR, session.STATUS))
+              (session.time_loaded, session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID,
+               session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,
+               session.STATUS))
     conn.commit()
     conn.close()
 
@@ -172,7 +173,7 @@ def reset_table(table):
     if table == 'sessions':
         c.execute('''
             CREATE TABLE sessions
-            (PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+            (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
         ''')
     elif table == 'settings':
         c.execute('''
