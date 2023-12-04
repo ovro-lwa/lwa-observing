@@ -51,7 +51,7 @@
             table = document.getElementById("SessionsTable");
             // Make dir a property of the function to preserve its value between function calls
             if (typeof sortsessionsTable.dir == 'undefined' ) {
-                sortsessionsTable.dir = "asc"; // Set initial direction to "asc"
+                sortsessionsTable.dir = "desc";
             }
             do {
                 switching = false;
@@ -77,7 +77,6 @@
                     switching = true;
                 }
             } while (switching);
-            // Toggle the direction only after the sorting is complete
             sortsessionsTable.dir = sortsessionsTable.dir == "asc" ? "desc" : "asc";
         }
     </script>
