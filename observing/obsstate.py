@@ -198,7 +198,7 @@ def reset_table(table):
     elif table == 'settings':
         c.execute('''
             CREATE TABLE settings
-            (time_loaded text, user text, filename text, time_file text)
+            (time_loaded text, user text, filename text)
         ''')
     elif table == 'calibrations':
         c.execute('''

@@ -2,26 +2,35 @@
 <html>
 <head>
     <style>
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            grid-gap: 10px;
+        .image-grid div {
+            position: relative;
         }
         .image-grid img {
             width: 100%;
             height: auto;
         }
+        .image-grid .popup {
+            position: absolute;
+            top: 0;
+            left: 0;
+            visibility: hidden;
+            width: 100%;
+            height: auto;
+            z-index: 1;
+        }
+        .image-grid div:hover .popup {
+            visibility: visible;
+        }
     </style>
 </head>
 <body>
-
-<div class="image-grid">
-    {% for image in images %}
-    <div>
-        <img src="{{ request.url_for('static', path=image) }}" alt="{{ image }}">
+    <div class="image-grid">
+        {% for image in images %}
+        <div>
+            <img src="{{ request.url_for('static', path=image) }}" alt="{{ image }}">
+            <img class="popup" src="{{ request.url_for('static', path=image) }}" alt="{{ image }}">
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
-
 </body>
 </html>
