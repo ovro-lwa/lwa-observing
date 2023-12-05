@@ -120,7 +120,7 @@ if __name__ == "__main__":
                 logger.info("Resetting schedule...")
                 sched0 = DataFrame([])
                 sched0 = sched_update(sched0)
-            elif filename in event and mode == 'cancel':
+            elif 'filename' in event and mode == 'cancel':
                 filename = event['filename']
                 if os.path.exists(filename):
                     logger.info(f"Cancelling session {filename}")
@@ -131,7 +131,6 @@ if __name__ == "__main__":
                         obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
                     except Exception as exc:
                         logger.warning("Could not update session status.")
-
             elif 'filename' in event and mode in ['asap', 'buffer']:
                 filename = event['filename']
                 if os.path.exists(filename):
