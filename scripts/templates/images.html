@@ -19,8 +19,10 @@
             height: 100%;
             line-height: 1; /* Adjust this value to change the spacing between lines */
             overflow-y: auto; /* Makes the list scrollable */
-            border: 1px solid black; /* Adds a border */
+            border: 1px solid #ddd;
             box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+            padding: 10px;
+            background-color: #f9f9f9; /* Sets a light gray background color */
         }
         .image-panel {
             width: 80%;
@@ -35,6 +37,8 @@
     </style>
 </head>
 <body>
+    <h1>Images</h1>
+    <h3>Drop images in /opt/devel/pipeline/images to see them here</h3>
     <div class="container">
         <div class="image-list">
             {% for image in images %}
