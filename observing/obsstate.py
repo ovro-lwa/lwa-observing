@@ -130,7 +130,7 @@ def add_settings(filename: str):
 
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    c.execute("INSERT INTO settings VALUES (?, ?, ?, ?)",
+    c.execute("INSERT INTO settings VALUES (?, ?, ?)",
               (now.mjd, user, os.path.basename(filename)))
     conn.commit()
     conn.close()
