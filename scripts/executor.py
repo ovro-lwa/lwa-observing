@@ -114,7 +114,7 @@ if __name__ == "__main__":
         def a(event):
             global sched0
             mode = event['mode']
-            logger.info(f'mode: {mode}')
+            logger.info(f'mode: {mode}, event["filename"]')
             if mode == 'reset':
                 # option to reset schedule
                 logger.info("Resetting schedule...")
