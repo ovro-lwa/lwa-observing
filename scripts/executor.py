@@ -27,8 +27,6 @@ def sched_update(sched, mode='buffer'):
     If mode=='asap', then old session will not be removed.
     """
 
-    # TODO: remove duplicates
-
     if isinstance(sched, list):
         if mode == 'asap':
             sched = concat(sched)
@@ -121,22 +119,29 @@ if __name__ == "__main__":
                 logger.info("Resetting schedule...")
                 sched0 = DataFrame([])
                 sched0 = sched_update(sched0)
-
             if 'filename' in event:
                 filename = event['filename']
                 if os.path.exists(filename):
-                    # TODO: add mode == 'cancel' to re-parse sdf for session id and removing it from schedule in sched_update
-                    sched = parsesdf.make_sched(filename, mode=mode)
-                    sched.sort_index(inplace=True)
-                    sched0 = sched_update([sched0, sched], mode=mode)
+                    if mode in ['asap', 'buffer']:
+                        # add session to obsstate
+                        try:
+                            obsstate.add_session(filename)
+                            logger.info(f'added session {filename}')
+                        except Exception as exc:
+                            logger.warning("Could not add session to obsstate.")
 
-                    # add session to obsstate
-                    try:
-                        obsstate.add_session(filename)
-                        logger.info(f'added session {filename}')
-                    except Exception as exc:
-                        logger.warning("Could not add session to obsstate.")
-                        raise exc
+                        sched = parsesdf.make_sched(filename, mode=mode)
+                        sched.sort_index(inplace=True)
+                        sched0 = sched_update([sched0, sched], mode=mode)
+                    elif mode == 'cancel':
+                        sched = parsesdf.make_sched(filename)
+                        sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
+
+                        # remove session from obsstate
+                        try:
+                            obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
+                        except Exception as exc:
+                            logger.warning("Could not update session status.")
                 else:
                     logger.warning(f"File {filename} does not exist.")
             else:

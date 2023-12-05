@@ -74,6 +74,15 @@ def reset_schedule(hard):
 
 
 @cli.command()
+@click.argument('sdffile')
+def cancel_sdf(sdffile):
+    """ Use SDF to remove session from schedule
+    """
+
+    ls.put_dict('/cmd/observing/submitsdf', {'sdffile': sdffile, 'mode': 'cancel'})
+
+
+@cli.command()
 @click.option('--mode', default=None, help='Display only a single observing mode')
 def show_schedule(mode):
     """ Print the schedule currently managed by executor.
