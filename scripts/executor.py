@@ -120,32 +120,32 @@ if __name__ == "__main__":
                 logger.info("Resetting schedule...")
                 sched0 = DataFrame([])
                 sched0 = sched_update(sched0)
-
-            if 'filename' in event:
+            elif filename in event and mode == 'cancel':
                 filename = event['filename']
                 if os.path.exists(filename):
-                    if mode in ['asap', 'buffer']:
-                        logger.info(f"Adding session {filename}")
-                        # add session to obsstate
-                        try:
-                            obsstate.add_session(filename)
-                            logger.info(f'added session {filename}')
-                        except Exception as exc:
-                            logger.warning("Could not add session to obsstate.")
+                    logger.info(f"Cancelling session {filename}")
+                    sched = parsesdf.make_sched(filename)
+                    sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
+                    # remove session from obsstate
+                    try:
+                        obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
+                    except Exception as exc:
+                        logger.warning("Could not update session status.")
 
-                        sched = parsesdf.make_sched(filename, mode=mode)
-                        sched.sort_index(inplace=True)
-                        sched0 = sched_update([sched0, sched], mode=mode)
-                    elif mode == 'cancel':
-                        logger.info(f"Cancelling session {filename}")
-                        sched = parsesdf.make_sched(filename)
-                        sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
-                        sched0 = sched_update(sched0)
-                        # remove session from obsstate
-                        try:
-                            obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
-                        except Exception as exc:
-                            logger.warning("Could not update session status.")
+            elif 'filename' in event and mode in ['asap', 'buffer']:
+                filename = event['filename']
+                if os.path.exists(filename):
+                    logger.info(f"Adding session {filename}")
+                    # add session to obsstate
+                    try:
+                        obsstate.add_session(filename)
+                        logger.info(f'added session {filename}')
+                    except Exception as exc:
+                        logger.warning("Could not add session to obsstate.")
+
+                    sched = parsesdf.make_sched(filename, mode=mode)
+                    sched.sort_index(inplace=True)
+                    sched0 = sched_update([sched0, sched], mode=mode)
                 else:
                     logger.warning(f"File {filename} does not exist.")
             else:
