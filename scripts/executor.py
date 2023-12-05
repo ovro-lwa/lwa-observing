@@ -134,9 +134,10 @@ if __name__ == "__main__":
                         sched.sort_index(inplace=True)
                         sched0 = sched_update([sched0, sched], mode=mode)
                     elif mode == 'cancel':
+                        logger.info(f"Cancelling session {filename}")
                         sched = parsesdf.make_sched(filename)
                         sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
-
+                        sched0 = sched_update(sched0)
                         # remove session from obsstate
                         try:
                             obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
