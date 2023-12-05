@@ -165,6 +165,15 @@ def update_session(session_id, status):
     conn.close()
 
 
+def iterate_max_session_id():
+    conn = sqlite3.connect(DBPATH)
+    c = conn.cursor()
+    c.execute("SELECT MAX(session_id) FROM sessions")
+    max_session_id = c.fetchone()[0]
+    conn.close()
+    return max_session_id
+
+
 def reset_table(table):
     """Reset the sessions table."""
     conn = sqlite3.connect(DBPATH)

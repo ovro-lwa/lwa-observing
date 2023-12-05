@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from astropy.time import Time
 from datetime import timedelta
+from observing import obsstate
 import random
 import os
 import logging
@@ -21,8 +22,11 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
     sdf_text = ''
 
     if sess_id is None:
-        sess_id = random.randint(0, 1000)
-        print(f"No Session ID provided. Setting random Session ID of {sess_id}")
+        try:
+            sess_id = obsstate.iterate_max_session_id()
+        except:
+            print(f"No Session ID provided and could not access obsstate. Setting random Session ID of {sess_id}")
+            sess_id = random.randint(0, 10000)
 
     if sess_mode is None:
         sess_mode = input(f"Enter a session mode from: {MODES}")
