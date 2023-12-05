@@ -169,9 +169,9 @@ def iterate_max_session_id():
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT MAX(session_id) FROM sessions")
-    max_session_id = c.fetchone()[0]
+    max_session_id = int(c.fetchone()[0])
     conn.close()
-    return max_session_id+1
+    return str(max_session_id+1)
 
 
 def reset_table(table):
