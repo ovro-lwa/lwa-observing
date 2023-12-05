@@ -106,6 +106,14 @@ def add_session(sdffile: str):
     session = Session(**dd['SESSION'], time_loaded=now.mjd, STATUS='scheduled')
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
+
+    # check whether session_id already exists in database
+    c.execute("SELECT 1 FROM sessions WHERE session_id = ?", (session.SESSION_ID,))
+    if c.fetchone() is not None:
+        logger.warning(f"Session ID {session.SESSION_ID} already exists in the database. Skipping...")
+        conn.close()
+        return
+
     c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
               (session.time_loaded, session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID,
                session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,

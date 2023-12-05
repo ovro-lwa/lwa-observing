@@ -114,15 +114,14 @@ if __name__ == "__main__":
         def a(event):
             global sched0
             mode = event['mode']
-            logger.info(f'mode: {mode}, {event["filename"]}')
             if mode == 'reset':
                 # option to reset schedule
                 logger.info("Resetting schedule...")
                 sched0 = DataFrame([])
                 sched0 = sched_update(sched0)
             elif 'filename' in event and mode == 'cancel':
-                filename = event['filename']
                 if os.path.exists(filename):
+                    filename = event['filename']
                     logger.info(f"Cancelling session {filename}")
                     sched = parsesdf.make_sched(filename)
                     sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
@@ -132,8 +131,8 @@ if __name__ == "__main__":
                     except Exception as exc:
                         logger.warning("Could not update session status.")
             elif 'filename' in event and mode in ['asap', 'buffer']:
-                filename = event['filename']
                 if os.path.exists(filename):
+                    filename = event['filename']
                     logger.info(f"Adding session {filename}")
                     # add session to obsstate
                     try:
