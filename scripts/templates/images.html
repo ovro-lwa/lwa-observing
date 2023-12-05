@@ -2,39 +2,41 @@
 <html>
 <head>
     <style>
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
+        .container {
+            display: flex;
         }
-        .image-grid img {
-            width: 100%;
-            height: auto;
+        .image-list {
+            width: 30%;
+            overflow: auto;
         }
-        .image-grid .popup {
-            position: absolute;
-            top: 0;
-            left: 0;
-            visibility: hidden;
-            width: 100%;
-            height: auto;
-            z-index: 1;
+        .image-panel {
+            width: 70%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .image-grid div:hover .popup {
-            visibility: visible;
+        .image-panel img {
+            max-width: 100%;
+            max-height: 100%;
         }
     </style>
 </head>
 <body>
-    {% for images in grouped_images %}
-    <div class="image-grid">
-        {% for image in images %}
-        <div>
-            <img src="/static/{{ image }}" alt="{{ image }}">
-            <img class="popup" src="/static/{{ image }}" alt="{{ image }}">
+    <div class="container">
+        <div class="image-list">
+            {% for image in images %}
+            <p><a href="#" onclick="loadImage('/static/{{ image }}')">{{ image }}</a></p>
+            {% endfor %}
         </div>
-        {% endfor %}
+        <div class="image-panel">
+            <img id="image" src="" alt="">
+        </div>
     </div>
-    {% endfor %}
-</body></html>
+    
+    <script>
+        function loadImage(src) {
+            document.getElementById('image').src = src;
+        }
+    </script>
+</body>
+</html>
