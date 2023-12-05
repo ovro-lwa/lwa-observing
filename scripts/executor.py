@@ -123,6 +123,7 @@ if __name__ == "__main__":
                 filename = event['filename']
                 if os.path.exists(filename):
                     if mode in ['asap', 'buffer']:
+                        logger.info(f"Adding session {filename}")
                         # add session to obsstate
                         try:
                             obsstate.add_session(filename)
