@@ -114,11 +114,13 @@ if __name__ == "__main__":
         def a(event):
             global sched0
             mode = event['mode']
+            logger.info(f'mode: {mode}')
             if mode == 'reset':
                 # option to reset schedule
                 logger.info("Resetting schedule...")
                 sched0 = DataFrame([])
                 sched0 = sched_update(sched0)
+
             if 'filename' in event:
                 filename = event['filename']
                 if os.path.exists(filename):
