@@ -59,7 +59,7 @@ async def get_combined(request: Request):
                     for row in obs.read_calibrations()]
 
     # Fetch data from the settings table
-    settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2], time_file=row[3]) 
+    settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2]) 
                 for row in obs.read_settings()]
 
     # Fetch data from the sessions table
