@@ -2,8 +2,11 @@
 <html>
 <head>
     <style>
-        .image-grid div {
-            position: relative;
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
         }
         .image-grid img {
             width: 100%;
@@ -24,13 +27,15 @@
     </style>
 </head>
 <body>
+    {% for i in range(0, len(images), 12) %}
     <div class="image-grid">
-        {% for image in images %}
+        {% for image in images[i:i+12] %}
         <div>
             <img src="/static/{{ image }}" alt="{{ image }}">
             <img class="popup" src="/static/{{ image }}" alt="{{ image }}">
         </div>
         {% endfor %}
     </div>
+    {% endfor %}
 </body>
 </html>
