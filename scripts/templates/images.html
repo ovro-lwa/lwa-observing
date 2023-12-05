@@ -27,9 +27,9 @@
     </style>
 </head>
 <body>
-    {% for i in range(0, len(images), 12) %}
+    {% for images in grouped_images %}
     <div class="image-grid">
-        {% for image in images[i:i+12] %}
+        {% for image in images %}
         <div>
             <img src="/static/{{ image }}" alt="{{ image }}">
             <img class="popup" src="/static/{{ image }}" alt="{{ image }}">
@@ -37,5 +37,4 @@
         {% endfor %}
     </div>
     {% endfor %}
-</body>
-</html>
+</body></html>
