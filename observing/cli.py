@@ -68,7 +68,7 @@ def reset_schedule(hard):
     hard reset will cancel observation currently being observed (experimental).
     """
 
-    ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
+    ls.put_dict('/cmd/observing/submitsdf', {'filename': None, 'mode': 'reset'})
     if hard:
         raise NotImplementedError
 
@@ -79,7 +79,7 @@ def cancel_sdf(sdffile):
     """ Use SDF to remove session from schedule
     """
 
-    ls.put_dict('/cmd/observing/submitsdf', {'sdffile': sdffile, 'mode': 'cancel'})
+    ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': 'cancel'})
 
 
 @cli.command()
