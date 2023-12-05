@@ -171,7 +171,7 @@ def iterate_max_session_id():
     c.execute("SELECT MAX(session_id) FROM sessions")
     max_session_id = c.fetchone()[0]
     conn.close()
-    return max_session_id
+    return max_session_id+1
 
 
 def reset_table(table):
