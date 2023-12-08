@@ -177,7 +177,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f'OBS_START_MJD   {mjd_start}\n'
     lines += f'OBS_START_MPM   {mpm}\n'
     lines += f"OBS_START       UTC {start_time.replace('-',' ').replace('T',' ')}\n"
-    lines += f"OBS_DUR         {duration}\n"
+    lines += f"OBS_DUR         {int(duration)}\n"
     lines += f"OBS_INT_TIME    {integration_time}\n"
     lines += f"OBS_DUR+        {duration_lf}\n"
 
