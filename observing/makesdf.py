@@ -75,9 +75,10 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         print(f"WARNING: {out_name} already exists. Overwriting.")
     else:
         print(f"Writing out to {out_name}")
-    f = open(out_name,'w')
-    f.write(sdf_text)
-    f.close()
+
+    with open(out_name,'w') as f:
+        f.write(sdf_text)
+
 
 
 def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None, obj_name=None, int_time=None):
@@ -96,7 +97,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
     if sess_mode in ['POWER', 'VOLT']:
         if ra is None and dec is None and obj_name is None:
-            object = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
+            coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
             try:
                 objectspl = coords.split(',')
                 if len(objectspl) == 2:
@@ -105,7 +106,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
                 elif len(objectspl) == 1:
                     obj_name = objectspl[0]
             except:
-                raise Exception("Couldn't parse object name")
+                raise ValueError("Couldn't parse coords")
 
     if obs_start is None:
         obs_start = input(f"Give the start time of the observation in isot format or as astropy.Time object")
@@ -119,7 +120,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
             try:
                 obs_start = Time(obs_start, format='isot').isot
             except:
-                raise Exception("Couldn't parse the observation start time")
+                raise ValueError("Couldn't parse obs_start")
 
     if obs_dur is None:
         obs_dur = int(input(f"Give the duration of the observation in milliseconds:"))
