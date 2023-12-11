@@ -2,15 +2,13 @@ import pandas as pd
 import numpy as np
 from astropy.time import Time
 from datetime import timedelta
+from observing.classes import ObsType, EphemModes
 import random
 import os
 import logging
 
 logger = logging.getLogger('observing')
 
-
-MODES = ['POWER', 'VOLT', 'FAST', 'SLOW']
-EPHEM_MODES = ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']
 
 def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home/pipeline/caltables/latest', pi_id=None,
            pi_name=None, config_file=None, n_obs=1, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None,
@@ -25,10 +23,11 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         print(f"No Session ID provided. Setting random Session ID of {sess_id}")
 
     if sess_mode is None:
-        sess_mode = input(f"Enter a session mode from: {MODES}")
-    assert sess_mode in MODES, f"sess_mode ({sess_mode}) should be in {MODES}"
+        sess_mode = input(f"Enter a session mode of {ObsType.__name__}")
+
+    sess_mode = ObsType(sess_mode)
     
-    if sess_mode.upper() not in ["FAST", "SLOW"]:
+    if sess_mode.name not in ["FAST", "SLOW"]:
         if beam_num is None:
             inp = input("Provide a beam number:")
             beam_num = int(inp)
@@ -87,15 +86,16 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
     print(f"Making observation {obs_count}")
     if obs_mode is None:
-        if sess_mode in ['POWER', 'VOLT']:
-            obs_mode = 'TRK_RADEC'
-            print("no obs_mode provided, assuming TRK_RADEC")
-    elif obs_mode in EPHEM_MODES:
+        if sess_mode.name in ['POWER', 'VOLT']:
+            obs_mode = EphemModes('TRK_RADEC')
+            logger.info("no obs_mode provided, assuming TRK_RADEC")
+    else:
+        obs_mode = EphemModes(obs_mode)
+        obj_name = obs_mode.name('TRK_')
         ra = 0.
         dec = 0.
-        obj_name = obs_mode.strip('TRK_')
 
-    if sess_mode in ['POWER', 'VOLT']:
+    if sess_mode.name in ['POWER', 'VOLT']:
         if ra is None and dec is None and obj_name is None:
             coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
             try:
@@ -125,7 +125,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
     if obs_dur is None:
         obs_dur = int(input(f"Give the duration of the observation in milliseconds:"))
 
-    if int_time is None and sess_mode in ['POWER', 'VOLT']: 
+    if int_time is None and sess_mode.name in ['POWER', 'VOLT']: 
         print(f"Give the integrations time of the observation in milliseconds")
         int_time = int(input())
 
@@ -138,12 +138,11 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     """ Create preamble info required for a proper SDF
     """
 
-    assert(session_mode in MODES), f"session mode not an accepted mode ({MODES})"
     lines = 'PI_ID            {:02d}\n'.format(pi_id)
     lines += f'PI_NAME          {pi_name}\n\n'
     lines += 'PROJECT_ID       0\n'
     lines += f'SESSION_ID       {session_id}\n'
-    lines += f'SESSION_MODE     {session_mode}\n'
+    lines += f'SESSION_MODE     {session_mode.name}\n'
     if beam_num != None:
         lines += f'SESSION_DRX_BEAM       {beam_num}\n'
     lines += f'CONFIG_FILE      {config_dir}\n'
@@ -179,7 +178,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f"OBS_DUR+        {duration_lf}\n"
 
     if obs_mode != None:
-        lines += f"OBS_MODE        {obs_mode}\n"
+        lines += f"OBS_MODE        {obs_mode.name}\n"
 
     if ra is not None:
         lines += f"OBS_RA          %.9f\n" % (ra)
