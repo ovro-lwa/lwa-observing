@@ -94,6 +94,8 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
         obj_name = obs_mode.name.lstrip('TRK_')
         ra = 0.
         dec = 0.
+    else:
+        obs_mode = EphemModes(obs_mode)
 
     if sess_mode.name in ['POWER', 'VOLT']:
         if ra is None and dec is None and obj_name is None:
