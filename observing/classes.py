@@ -11,6 +11,7 @@ class EphemModes(Enum):
     trk_jov ='TRK_JOV'
     trk_sol = 'TRK_SOL'
     trk_lun = 'TRK_LUN'
+    trk_radec = 'TRK_RADEC'
 
 class Session:
     """
