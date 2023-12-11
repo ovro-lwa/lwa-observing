@@ -144,7 +144,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     lines += f'PI_NAME          {pi_name}\n\n'
     lines += 'PROJECT_ID       0\n'
     lines += f'SESSION_ID       {session_id}\n'
-    lines += f'SESSION_MODE     {session_mode.name}\n'
+    lines += f'SESSION_MODE     {session_mode.name.upper()}\n'
     if beam_num != None:
         lines += f'SESSION_DRX_BEAM       {beam_num}\n'
     lines += f'CONFIG_FILE      {config_dir}\n'
@@ -180,7 +180,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f"OBS_DUR+        {duration_lf}\n"
 
     if obs_mode != None:
-        lines += f"OBS_MODE        {obs_mode.name}\n"
+        lines += f"OBS_MODE        {obs_mode.name.upper()}\n"
 
     if ra is not None:
         lines += f"OBS_RA          %.9f\n" % (ra)
