@@ -91,7 +91,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
             logger.info("no obs_mode provided, assuming TRK_RADEC")
     else:
         obs_mode = EphemModes(obs_mode)
-        obj_name = obs_mode.name('TRK_')
+        obj_name = obs_mode.name.lstrip('TRK_')
         ra = 0.
         dec = 0.
 
