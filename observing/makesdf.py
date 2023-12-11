@@ -89,7 +89,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
         if sess_mode.name in ['POWER', 'VOLT']:
             obs_mode = EphemModes('TRK_RADEC')
             logger.info("no obs_mode provided, assuming TRK_RADEC")
-    elif obs_mode is in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
+    elif obs_mode in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
         obs_mode = EphemModes(obs_mode)
         obj_name = obs_mode.name.lstrip('TRK_')
         ra = 0.
