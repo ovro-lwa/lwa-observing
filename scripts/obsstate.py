@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)  # This configures the root logger
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-image_dir = os.path.dirname(os.path.realpath(__file__))
+image_dir = '/opt/devel/pipeline/images'
 app.mount("/static", StaticFiles(directory=image_dir), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -26,14 +26,16 @@ async def startup_event():
 @app.get("/sessions", response_class=HTMLResponse)
 async def get_all_sessions(request: Request):
     rows = obs.read_sessions()
-    sessions = [obs.Session(PI_ID=row[0], PI_NAME=row[1], PROJECT_ID=row[2], SESSION_ID=row[3], SESSION_MODE=row[4], SESSION_DRX_BEAM=row[5], CONFIG_FILE=row[6], CAL_DIR=row[7], STATUS=row[8]) for row in rows]
+    sessions = [obs.Session(time_loaded=row[0], PI_ID=row[1], PI_NAME=row[2], PROJECT_ID=row[3],
+                            SESSION_ID=row[4], SESSION_MODE=row[5], SESSION_DRX_BEAM=row[6],
+                            CONFIG_FILE=row[7], CAL_DIR=row[8], STATUS=row[9]) for row in rows]
     return templates.TemplateResponse("sessions.html", {"request": request, "sessions": sessions})
 
 
 @app.get("/settings", response_class=HTMLResponse)
 async def get_settings(request: Request):
     rows = obs.read_settings()
-    settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2], time_file=row[3]) for row in rows]
+    settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2]) for row in rows]
     return templates.TemplateResponse("settings.html", {"request": request, "settings": settings})
 
 
@@ -46,7 +48,8 @@ async def get_calibrations(request: Request):
 
 @app.get("/images", response_class=HTMLResponse)
 async def get_images(request: Request):
-    images = [f for f in os.listdir(image_dir) if fnmatch.fnmatch(f, '*.png')]
+    images = [f for f in os.listdir(image_dir) if fnmatch.fnmatch(f, '*.png') or fnmatch.fnmatch(f, '*.gif') or fnmatch.fnmatch(f, '*.jpg')]
+
     return templates.TemplateResponse("images.html", {"request": request, "images": images})
 
 
@@ -57,12 +60,13 @@ async def get_combined(request: Request):
                     for row in obs.read_calibrations()]
 
     # Fetch data from the settings table
-    settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2], time_file=row[3]) 
+    settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2]) 
                 for row in obs.read_settings()]
 
     # Fetch data from the sessions table
-    sessions = [obs.Session(PI_ID=row[0], PI_NAME=row[1], PROJECT_ID=row[2], SESSION_ID=row[3], SESSION_MODE=row[4], SESSION_DRX_BEAM=row[5], CONFIG_FILE=row[6], CAL_DIR=row[7], STATUS=row[8]) 
-                for row in obs.read_sessions()]
+    sessions = [obs.Session(time_loaded=row[0], PI_ID=row[1], PI_NAME=row[2], PROJECT_ID=row[3],
+                            SESSION_ID=row[4], SESSION_MODE=row[5], SESSION_DRX_BEAM=row[6],
+                            CONFIG_FILE=row[7], CAL_DIR=row[8], STATUS=row[9]) for row in obs.read_sessions()]
 
     # Render the data into three tables
     return templates.TemplateResponse("combined.html", {"request": request, "calibrations": calibrations,

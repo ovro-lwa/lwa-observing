@@ -2,26 +2,58 @@
 <html>
 <head>
     <style>
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            grid-gap: 10px;
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
         }
-        .image-grid img {
-            width: 100%;
-            height: auto;
+        .container {
+            display: flex;
+            align-items: flex-start; /* Aligns items to the start of the cross axis */
+            height: 100vh;
+            overflow-y: auto; /* Enables vertical scrolling */
+            box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+        }
+        .image-list {
+            width: 20%;
+            height: 100%;
+            line-height: 1; /* Adjust this value to change the spacing between lines */
+            overflow-y: auto; /* Makes the list scrollable */
+            border: 1px solid #ddd;
+            box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+            padding: 10px;
+            background-color: #f9f9f9; /* Sets a light gray background color */
+        }
+        .image-panel {
+            width: 80%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .image-panel img {
+            max-width: 100%;
+            max-height: 100%;
         }
     </style>
 </head>
 <body>
-
-<div class="image-grid">
-    {% for image in images %}
-    <div>
-        <img src="{{ request.url_for('static', path=image) }}" alt="{{ image }}">
+    <h1>Image drop browser</h1>
+    <h3>Drop images in /opt/devel/pipeline/images to see them here</h3>
+    <div class="container">
+        <div class="image-list">
+            {% for image in images %}
+            <p><a href="#" onclick="loadImage('/static/{{ image }}')">{{ image }}</a></p>
+            {% endfor %}
+        </div>
+        <div class="image-panel">
+            <img id="image" src="" alt="">
+        </div>
     </div>
-    {% endfor %}
-</div>
-
+    
+    <script>
+        function loadImage(src) {
+            document.getElementById('image').src = src;
+        }
+    </script>
 </body>
 </html>

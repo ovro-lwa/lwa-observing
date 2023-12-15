@@ -77,7 +77,6 @@
                     switching = true;
                 }
             } while (switching);
-            // Toggle the direction only after the sorting is complete
             sortsessionsTable.dir = sortsessionsTable.dir == "asc" ? "desc" : "asc";
         }
     </script>
@@ -127,18 +126,20 @@
     <div style="height: 200px; overflow-y: auto;">
         <table id="SessionsTable">
             <tr>
-                <th onclick="sortsessionsTable(0)">PI_ID</th>
-                <th onclick="sortsessionsTable(1)">PI_NAME</th>
-                <th onclick="sortsessionsTable(2)">PROJECT_ID</th>
-                <th onclick="sortsessionsTable(3)">SESSION_ID</th>
-                <th onclick="sortsessionsTable(4)">SESSION_MODE</th>
-                <th onclick="sortsessionsTable(5)">SESSION_DRX_BEAM</th>
-                <th onclick="sortsessionsTable(6)">CONFIG_FILE</th>
-                <th onclick="sortsessionsTable(7)">CAL_DIR</th>
-                <th onclick="sortsessionsTable(8)">STATUS</th>
+                <th onclick="sortsessionsTable(0)">Time Loaded</th>
+                <th onclick="sortsessionsTable(1)">PI_ID</th>
+                <th onclick="sortsessionsTable(2)">PI_NAME</th>
+                <th onclick="sortsessionsTable(3)">PROJECT_ID</th>
+                <th onclick="sortsessionsTable(4)">SESSION_ID</th>
+                <th onclick="sortsessionsTable(5)">SESSION_MODE</th>
+                <th onclick="sortsessionsTable(6)">SESSION_DRX_BEAM</th>
+                <th onclick="sortsessionsTable(7)">CONFIG_FILE</th>
+                <th onclick="sortsessionsTable(8)">CAL_DIR</th>
+                <th onclick="sortsessionsTable(9)">STATUS</th>
             </tr>
             {% for session in sessions %}
             <tr>
+                <td>{{ session['time_loaded'] }}</td>
                 <td>{{ session['PI_ID'] }}</td>
                 <td>{{ session['PI_NAME'] }}</td>
                 <td>{{ session['PROJECT_ID'] }}</td>

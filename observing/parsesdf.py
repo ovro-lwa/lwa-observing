@@ -24,7 +24,7 @@ def make_sched(sdf_fn, mode='buffer'):
     if session.obs_type is ObsType.slow:
         sched = slow_vis_obs(obs_list, session, mode=mode)
 
-    logger.info(f"Parsed {sdf_fn} into {len(sched)} submissions.")
+    logger.info(f"Parsed {sdf_fn} into {len(sched)} commands.")
 
     return sched
 

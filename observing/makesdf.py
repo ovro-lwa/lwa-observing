@@ -3,6 +3,7 @@ import numpy as np
 from astropy.time import Time
 from datetime import timedelta
 from observing.classes import ObsType, EphemModes
+from observing import obsstate
 import random
 import os
 import logging
@@ -19,8 +20,11 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
     sdf_text = ''
 
     if sess_id is None:
-        sess_id = random.randint(0, 1000)
-        print(f"No Session ID provided. Setting random Session ID of {sess_id}")
+        try:
+            sess_id = obsstate.iterate_max_session_id()
+        except:
+            print(f"No Session ID provided and could not access obsstate. Setting random Session ID of {sess_id}")
+            sess_id = random.randint(0, 10000)
 
     if sess_mode is None:
         sess_mode = input(f"Enter a session mode of {ObsType.__name__}")
@@ -175,7 +179,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f'OBS_START_MJD   {mjd_start}\n'
     lines += f'OBS_START_MPM   {mpm}\n'
     lines += f"OBS_START       UTC {start_time.replace('-',' ').replace('T',' ')}\n"
-    lines += f"OBS_DUR         {duration}\n"
+    lines += f"OBS_DUR         {int(duration)}\n"
     lines += f"OBS_INT_TIME    {integration_time}\n"
     lines += f"OBS_DUR+        {duration_lf}\n"
 

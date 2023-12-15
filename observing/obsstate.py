@@ -1,6 +1,7 @@
 import os
 import getpass
 import time
+from astropy.time import Time
 from pydantic import BaseModel
 import sqlite3
 from observing import parsesdf
@@ -9,10 +10,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 # TODO: figure out how to make it r/w for all users
-#DBPATH = 'file:/opt/devel/pipeline/ovrolwa.db?mode=rw'
-DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
+DBPATH = '/opt/devel/pipeline/ovrolwa.db'
+#DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
 
 class Session(BaseModel):
+    time_loaded: str
     PI_ID: str
     PI_NAME: str
     PROJECT_ID: str
@@ -28,7 +30,6 @@ class Settings(BaseModel):
     time_loaded: str
     user: str
     filename: str
-    time_file: str
 
 
 class Calibrations(BaseModel):
@@ -50,14 +51,15 @@ def connection_factory():
 
 def create_db():
     """Create database if it doesn't exist."""
+
     with connection_factory() as conn:
         c = conn.cursor()
         c.executescript('''
             CREATE TABLE IF NOT EXISTS sessions
-            (PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text);
+            (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text);
             
             CREATE TABLE IF NOT EXISTS settings
-            (time_loaded text, user text, filename text, time_file text);
+            (time_loaded text, user text, filename text);
             
             CREATE TABLE IF NOT EXISTS calibrations
             (time_loaded text, filename text, beam text);
@@ -66,9 +68,10 @@ def create_db():
 
 def read_sessions():
     """Read all sessions from the database"""
+
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("SELECT * FROM sessions")
+        c.execute("SELECT * FROM sessions ORDER BY time_loaded DESC")
         rows = c.fetchall()
 
     return rows
@@ -76,9 +79,10 @@ def read_sessions():
 
 def read_settings():
     """Read all settings from the database"""
+
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("SELECT * FROM settings")
+        c.execute("SELECT * FROM settings ORDER BY time_loaded DESC")
         rows = c.fetchall()
 
     return rows
@@ -86,9 +90,10 @@ def read_settings():
 
 def read_calibrations():
     """Read all calibrations from the database"""
+
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("SELECT * FROM calibrations")
+        c.execute("SELECT * FROM calibrations ORDER BY time_loaded DESC")
         rows = c.fetchall()
 
     return rows
@@ -96,19 +101,31 @@ def read_calibrations():
 
 def add_session(sdffile: str):
     """Parse SDF to create and add new session to the database."""
+
     assert os.path.exists(sdffile), f"{sdffile} does not exist"
     dd = parsesdf.sdf_to_dict(sdffile)
+    now = Time.now()
     # convert lists to comma-separated strings
     for key, value in dd['SESSION'].items():
         if isinstance(value, list):
             dd['SESSION'][key] = ', '.join(map(str, value))
-    session = Session(**dd['SESSION'], STATUS='scheduled')
+
+    session = Session(**dd['SESSION'], time_loaded=now.mjd, STATUS='scheduled')
 
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                  (session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID, session.SESSION_MODE, 
-                   session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR, session.STATUS))
+
+        # check whether session_id already exists in database
+        c.execute("SELECT 1 FROM sessions WHERE session_id = ?", (session.SESSION_ID,))
+        if c.fetchone() is not None:
+            logger.warning(f"Session ID {session.SESSION_ID} already exists in the database. Skipping...")
+            conn.close()
+            return
+
+        c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              (session.time_loaded, session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID,
+               session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,
+               session.STATUS))
 
 
 def add_settings(filename: str, time_loaded: str):
@@ -127,12 +144,13 @@ def add_settings(filename: str, time_loaded: str):
 
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO settings VALUES (?, ?, ?, ?)",
-                  (time_loaded, user, os.path.basename(filename), 0))   # TODO: figure out how to get time from file
+        c.execute("INSERT INTO settings VALUES (?, ?, ?)",
+                  (time_loaded, user, os.path.basename(filename)))
 
 
 def add_calibrations(filename, beam):
     """Add a new calibration to the calibrations table."""
+
     time_loaded = time.asctime(time.gmtime(time.time()))
     with connection_factory() as conn:
         c = conn.cursor()
@@ -164,20 +182,33 @@ def update_session(session_id, status):
         c.execute("UPDATE sessions SET status = ? WHERE SESSION_ID = ?", (status, session_id))
 
 
+def iterate_max_session_id():
+    conn = sqlite3.connect(DBPATH)
+    c = conn.cursor()
+    c.execute("SELECT MAX(session_id) FROM sessions")
+    try:
+        max_session_id = int(c.fetchone()[0])
+    except TypeError:
+        max_session_id = 0
+    conn.close()
+    return str(max_session_id+1)
+
+
 def reset_table(table):
     """Reset the sessions table."""
+
     with connection_factory() as conn:
         c = conn.cursor()
         c.execute(f"DROP TABLE IF EXISTS {table}")
         if table == 'sessions':
             c.execute('''
-                CREATE TABLE sessions
-                (PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
-            ''')
+            CREATE TABLE sessions
+            (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+        ''')
         elif table == 'settings':
             c.execute('''
-                CREATE TABLE settings
-                (time_loaded text, user text, filename text, time_file text)
+            CREATE TABLE settings
+            (time_loaded text, user text, filename text)
             ''')
         elif table == 'calibrations':
             c.execute('''
