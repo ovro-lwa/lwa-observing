@@ -25,18 +25,15 @@ class Session(BaseModel):
     CAL_DIR: str
     STATUS: str  # e.g., "scheduled" "completed"
 
-
 class Settings(BaseModel):
     time_loaded: str
     user: str
     filename: str
 
-
 class Calibrations(BaseModel):
     time_loaded: str
     filename: str
     beam: str
-
 
 class Product(BaseModel):
     time_loaded: str
@@ -119,13 +116,12 @@ def add_session(sdffile: str):
         c.execute("SELECT 1 FROM sessions WHERE session_id = ?", (session.SESSION_ID,))
         if c.fetchone() is not None:
             logger.warning(f"Session ID {session.SESSION_ID} already exists in the database. Skipping...")
-            conn.close()
             return
 
         c.execute("INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              (session.time_loaded, session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID,
-               session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,
-               session.STATUS))
+                  (session.time_loaded, session.PI_ID, session.PI_NAME, session.PROJECT_ID, session.SESSION_ID,
+                   session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,
+                   session.STATUS))
 
 
 def add_settings(filename: str, time_loaded: str):
@@ -202,13 +198,13 @@ def reset_table(table):
         c.execute(f"DROP TABLE IF EXISTS {table}")
         if table == 'sessions':
             c.execute('''
-            CREATE TABLE sessions
-            (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
-        ''')
+                CREATE TABLE sessions
+                (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+            ''')
         elif table == 'settings':
             c.execute('''
-            CREATE TABLE settings
-            (time_loaded text, user text, filename text)
+                CREATE TABLE settings
+                (time_loaded text, user text, filename text)
             ''')
         elif table == 'calibrations':
             c.execute('''
