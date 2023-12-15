@@ -9,8 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # TODO: figure out how to make it r/w for all users
-#DBPATH = 'file:/opt/devel/pipeline/ovrolwa.db?mode=rw'
-DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
+DBPATH = '/opt/devel/pipeline/ovrolwa.db'
+#DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
 
 class Session(BaseModel):
     PI_ID: str
@@ -28,7 +28,6 @@ class Settings(BaseModel):
     time_loaded: str
     user: str
     filename: str
-    time_file: str
 
 
 class Calibrations(BaseModel):
