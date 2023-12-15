@@ -1,150 +1,138 @@
 import pandas as pd
 import numpy as np
 from astropy.time import Time
-import warnings
 from datetime import timedelta
-import subprocess
-import argparse
+from observing.classes import ObsType, EphemModes
+import random
+import os
+import logging
 
-MODES = ['POWER', 'VOLT', 'FAST', 'SLOW']
+logger = logging.getLogger('observing')
 
 
-def create(out_name):
+def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home/pipeline/caltables/latest', pi_id=None,
+           pi_name=None, config_file=None, n_obs=1, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None,
+           obj_name=None, int_time=None):
     """ Create a file out_name as an SDF
     """
+
     sdf_text = ''
 
-    print(" ")
-    print("Enter a session ID and session mode with the format NNN MODE")
-    correct = False
-    while not correct:
-        inp = input()
-        out = inp.split(' ')
-        if len(out) < 2:
-            raise Exception(f"{len(out)} inputs instead of the expected 2 were given")
-        sess_id = out[0]
-        sess_mode = out[1]
-        if sess_mode in MODES:
-            correct = True
-        elif sess_mode not in MODES:
-            print(f"The session mode provided is not recognized. Please give one of the following: {MODES}")
-    
-    if sess_mode not in  ["FAST", "SLOW"]:
-        print("Provide a beam number:")
-        inp = input()
-        beam_num = int(inp)
+    if sess_id is None:
+        sess_id = random.randint(0, 1000)
+        print(f"No Session ID provided. Setting random Session ID of {sess_id}")
 
-        print(" ")
-        print("Provide the path to the calibration directory, or hit enter:")
-        cal_dir = input()
-        if cal_dir == '':
-            cal_dir = None
-        
-    elif sess_mode in ["FAST", "SLOW"]:
+    if sess_mode is None:
+        sess_mode = input(f"Enter a session mode of {ObsType.__name__}")
+
+    sess_mode = ObsType(sess_mode)
+    
+    if sess_mode.name not in ["FAST", "SLOW"]:
+        if beam_num is None:
+            inp = input("Provide a beam number:")
+            beam_num = int(inp)
+        if cal_dir is not None:
+            assert os.path.exists(cal_dir), f"cal_dir ({cal_dir}) does not exist"
+    else:
         beam_num = None
         cal_dir = None
 
-    print(" ")
-    print("Enter a PI ID, or hit enter")
-    inp = input()
-    if inp == "":
-        print("No PI ID provided. Setting the PI ID to 0")
-        pi_id = 0
-    elif inp != "":
-        pi_id = int(inp)
+    if pi_id is None:
+        pi_id = random.randint(0, 1000)
+        print(f"No PI ID provided. Setting random PI ID of {pi_id}")
 
-    print(" ")
-    print("Enter PI Name, or hit enter")
-    pi_name = input()
-    if pi_name == '':
-        pi_name = 'Observer'
-        print("No PI Name provided. Setting the PI Name to Observer")
+    if pi_name is None:
+        try:
+            pi_name = os.environ["USER"]
+        except:
+            pi_name = "Observer"
+            print("No PI Name provided. Setting the PI Name to Observer")
 
-    print(" ")
-    print("Provide the path to the configuration file, or hit enter:")
-    config_dir = input()
-    if config_dir == "":
+    if config_file is None:
         print("No configuration file specified. Assuming the standard path.")
-        config_dir = "/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml"
+        config_file = "/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml"
 
     try:
-        session_preamble = make_session_preamble(sess_id, sess_mode, pi_id,pi_name,beam_num,config_dir, cal_dir)
+        session_preamble = make_session_preamble(sess_id, sess_mode, pi_id, pi_name, beam_num, config_file, cal_dir)
         sdf_text += session_preamble
         print(session_preamble)
     except:
         raise Exception("Couldn't make the session preamble")
     
-    ephem_modes =  ['TRK_JOV','TRK_SOL','TRK_LUN'] 
-    cont = True
-    obs_count = 1
-    while cont:
-        print(f"Making observation {obs_count}")
-        print("Enter the observing mode")
-        obs_mode = input()
-        if obs_mode == '':
-            if sess_mode in ['FAST', 'SLOW']:
-                obs_mode = None
-            else:
-                obs_mode = 'TRK_RADEC'
-                print("No obs mode specified for beamformed observation. Assuming TRK_RADEC")
+    obs_text = make_oneobs(1, sess_mode=sess_mode, obs_mode=obs_mode, obs_start=obs_start, obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name,
+                           int_time=int_time)
+    sdf_text += obs_text
 
-        print(f"Give the start time of the observation in isot format")
-        correct = False
-        while not correct:
-            start_time = input()
-            try:
-                t = Time(start_time, format = 'isot')
-                correct = True
-            except:
-                print("Time format not isot. Please enter the observation start time in isot format")
-               
-
-        print(f"Give the duration of the observation in milliseconds:")
-        dur = int(input())
-
-        if sess_mode in ['POWER', 'VOLT']: 
-            print(f"Give the integrations time of the observation in milliseconds")
-            int_time = int(input())
-        elif sess_mode in ['FAST', 'SLOW']:
-            int_time = None
-        
-        if obs_mode not in ephem_modes:
-            print(f"Give the RA and Dec of the object as RA DEC, in degrees. If doing a fast vis observation or giving an object name to resolve instead, hit enter")
-            coords = input()
-            if coords != '':
-                ra,dec = coords.split()
-                ra = float(ra)
-                dec = float(dec)
-            elif coords == '':
-                ra = None
-                dec = None
-   
-        if obs_mode not in ephem_modes:
-            print("Give the name of the object, or optionally hit enter if you provided an ra/dec")
-        obj_name = input()
-        if obj_name == '':
-            obj_name = None
-    
-        if obs_mode in ephem_modes:
-            ra = 0.
-            dec = 0.
-            obj_name = obs_mode.strip('TRK_')
-
-        obs_text = make_obs_block(obs_count, start_time,dur,ra,dec,obj_name,int_time,obs_mode)
+    # after first, all others will prompt for input
+    for obs_count in range(1, n_obs):
+        obs_text = make_oneobs(obs_count, sess_mode=sess_mode)
         sdf_text += obs_text
         print(obs_text)
         print("Add another observation? (Y/N)")
-        inp = input()
-        if inp == 'Y' or inp == ' ' or inp == 'y':
-            cont = True
-            obs_count += 1
-        elif inp == 'N' or 'n':
-            cont = False
-            print(f"Writing out to {out_name}")
-            f = open(out_name,'w')
-            f.write(sdf_text)
-            f.close()
-    return
+
+    if os.path.exists(out_name):
+        print(f"WARNING: {out_name} already exists. Overwriting.")
+    else:
+        print(f"Writing out to {out_name}")
+
+    with open(out_name,'w') as f:
+        f.write(sdf_text)
+
+
+
+def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None, obj_name=None, int_time=None):
+    """ Create string for one observation
+    """
+
+    print(f"Making observation {obs_count}")
+    if obs_mode is None:
+        if sess_mode.name in ['POWER', 'VOLT']:
+            obs_mode = EphemModes('TRK_RADEC')
+            logger.info("no obs_mode provided, assuming TRK_RADEC")
+    elif obs_mode in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
+        obs_mode = EphemModes(obs_mode)
+        obj_name = obs_mode.name.lstrip('TRK_')
+        ra = 0.
+        dec = 0.
+    else:
+        obs_mode = EphemModes(obs_mode)
+
+    if sess_mode.name in ['POWER', 'VOLT']:
+        if ra is None and dec is None and obj_name is None:
+            coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
+            try:
+                objectspl = coords.split(',')
+                if len(objectspl) == 2:
+                    ra = float(ra)
+                    dec = float(dec)
+                elif len(objectspl) == 1:
+                    obj_name = objectspl[0]
+            except:
+                raise ValueError("Couldn't parse coords")
+
+    if obs_start is None:
+        obs_start = input(f"Give the start time of the observation in isot format or as astropy.Time object")
+
+    if isinstance(obs_start, Time):
+        obs_start = obs_start.isot
+    elif isinstance(obs_start, str):
+        if obs_start.lower() == 'now':
+            obs_start = Time.now().isot
+        else:
+            try:
+                obs_start = Time(obs_start, format='isot').isot
+            except:
+                raise ValueError("Couldn't parse obs_start")
+
+    if obs_dur is None:
+        obs_dur = int(input(f"Give the duration of the observation in milliseconds:"))
+
+    if int_time is None and sess_mode.name in ['POWER', 'VOLT']: 
+        print(f"Give the integrations time of the observation in milliseconds")
+        int_time = int(input())
+
+    obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode)
+    return obs_text
 
 
 def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Observer', beam_num = None,
@@ -152,12 +140,11 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     """ Create preamble info required for a proper SDF
     """
 
-    assert(session_mode in MODES), f"session mode not an accepted mode ({MODES})"
     lines = 'PI_ID            {:02d}\n'.format(pi_id)
     lines += f'PI_NAME          {pi_name}\n\n'
     lines += 'PROJECT_ID       0\n'
     lines += f'SESSION_ID       {session_id}\n'
-    lines += f'SESSION_MODE     {session_mode}\n'
+    lines += f'SESSION_MODE     {session_mode.name.upper()}\n'
     if beam_num != None:
         lines += f'SESSION_DRX_BEAM       {beam_num}\n'
     lines += f'CONFIG_FILE      {config_dir}\n'
@@ -193,7 +180,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f"OBS_DUR+        {duration_lf}\n"
 
     if obs_mode != None:
-        lines += f"OBS_MODE        {obs_mode}\n"
+        lines += f"OBS_MODE        {obs_mode.name.upper()}\n"
 
     if ra is not None:
         lines += f"OBS_RA          %.9f\n" % (ra)

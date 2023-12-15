@@ -13,13 +13,13 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
-from observing import parsesdf, schedule
+from mnc import control  # inherited by threads
+from observing import parsesdf, schedule, obsstate
 from dsautils import dsa_store
-from mnc import control
 import logging
 
-logger = logging.getLogger('observing')
-
+logging.basicConfig(level=logging.INFO)  # This configures the root logger
+logger = logging.getLogger(__name__)
 
 def sched_update(sched, mode='buffer'):
     """ Take a schedule or list of schedules, concatenate and sort them.
@@ -59,6 +59,10 @@ def submit_next(sched, pool):
         rows = sched[sched.session_id == row.session_id]
         fut = pool.submit(runrow, rows)
         schedule.put_submitted(rows)
+        try:
+            obsstate.update_session(row['session_id'], 'observing')
+        except Exception as exc:
+            logger.warning("Could not update session status.")
         sched.drop(index=rows.index, axis=0, inplace=True)
         return fut
     else:
@@ -66,7 +70,7 @@ def submit_next(sched, pool):
 
 
 def runrow(rows):
-    """ Runs a command from the schedule
+    """ Runs a list of rows for a session_id in the schedule
     """
 
     for mjd, row in rows.iterrows():
@@ -82,6 +86,13 @@ def runrow(rows):
         except Exception as exc:
             logger.warning(exc)
 
+    # if loop completes, then set session to completed
+    try:
+        obsstate.update_session(row['session_id'], 'completed')
+    except Exception as exc:
+        logger.warning("Could not update session status.")
+
+
 
 if __name__ == "__main__":
     """ Run commands parsed from SDF.
@@ -89,6 +100,8 @@ if __name__ == "__main__":
 
     pool = ProcessPoolExecutor(max_workers = 8)
     ls = dsa_store.DsaStore()
+
+    logger.info("Set up ProcessPool and DsaStore")
 
     sched0 = DataFrame([])
     def sched_callback():
@@ -108,6 +121,16 @@ if __name__ == "__main__":
                     sched = parsesdf.make_sched(filename, mode=mode)
                     sched.sort_index(inplace=True)
                     sched0 = sched_update([sched0, sched], mode=mode)
+
+                    # add session to obsstate
+                    try:
+                        obsstate.add_session(filename)
+                        logger.info(f'added session {filename}')
+                    except Exception as exc:
+                        logger.warning("Could not add session to obsstate.")
+                        raise exc
+                else:
+                    logger.warning(f"File {filename} does not exist.")
             else:
                 logger.debug(f"No filename defined.")
         return a

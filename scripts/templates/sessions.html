@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" href="ovro-lwa.ico" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        th {
+            background-color: #47a84a;
+            color: white;
+        }
+    </style>
+    
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                var tables = ["CalibrationsTable", "SettingsTable", "SessionsTable"];
+                for (var t = 0; t < tables.length; t++) {
+                    var table = document.getElementById(tables[t]);
+                    if (table) {
+                        for (var i = 0; i < table.rows.length; i++) {
+                            table.rows[i].onmouseover = function() {
+                                this.style.backgroundColor = "#aaaaaa";
+                            };
+                            table.rows[i].onmouseout = function() {
+                                this.style.backgroundColor = "";
+                            };
+                        }
+                    }
+                }
+            }, 500);  // wait 500 milliseconds before executing the function
+        };
+    </script>
+    <script>
+        function sortsessionsTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById("SessionsTable");
+            // Make dir a property of the function to preserve its value between function calls
+            if (typeof sortsessionsTable.dir == 'undefined' ) {
+                sortsessionsTable.dir = "desc";
+            }
+            do {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (sortsessionsTable.dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (sortsessionsTable.dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            } while (switching);
+            // Toggle the direction only after the sorting is complete
+            sortsessionsTable.dir = sortsessionsTable.dir == "asc" ? "desc" : "asc";
+        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for the dynamic content to load
+            setTimeout(function() {
+                var filterForm = document.getElementById('filterForm');
+                if (filterForm) {
+                    filterForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        var filter = document.getElementById('filter').value;
+                        var table = document.getElementById('SessionsTable');
+                        if (table) {
+                            for (var i = 1; i < table.rows.length; i++) {  // start from the second row to exclude the header
+                                var row = table.rows[i];
+                                var cells = row.cells;
+                                var rowContainsFilter = Array.from(cells).some(function(cell) {
+                                    var cellValue = cell.textContent || cell.innerText;
+                                    return cellValue.indexOf(filter) > -1;
+                                });
+                                if (rowContainsFilter) {
+                                    row.style.display = "";  // show the row
+                                } else {
+                                    row.style.display = "none";  // hide the row
+                                }
+                            }
+                        }
+                    };
+                }
+            }, 1000);  // Adjust the delay as needed
+        });
+    </script>
+    
+</head>
+
+<body>
+    
+    <h2>Sessions</h2>
+    
+    <form id="filterForm">
+        <label for="filter">Select on string:</label>
+        <input type="text" id="filter" name="filter">
+        <input type="submit" value="Apply Filter">
+    </form>
+    
+    <div style="height: 200px; overflow-y: auto;">
+        <table id="SessionsTable">
+            <tr>
+                <th onclick="sortsessionsTable(0)">PI_ID</th>
+                <th onclick="sortsessionsTable(1)">PI_NAME</th>
+                <th onclick="sortsessionsTable(2)">PROJECT_ID</th>
+                <th onclick="sortsessionsTable(3)">SESSION_ID</th>
+                <th onclick="sortsessionsTable(4)">SESSION_MODE</th>
+                <th onclick="sortsessionsTable(5)">SESSION_DRX_BEAM</th>
+                <th onclick="sortsessionsTable(6)">CONFIG_FILE</th>
+                <th onclick="sortsessionsTable(7)">CAL_DIR</th>
+                <th onclick="sortsessionsTable(8)">STATUS</th>
+            </tr>
+            {% for session in sessions %}
+            <tr>
+                <td>{{ session['PI_ID'] }}</td>
+                <td>{{ session['PI_NAME'] }}</td>
+                <td>{{ session['PROJECT_ID'] }}</td>
+                <td>{{ session['SESSION_ID'] }}</td>
+                <td>{{ session['SESSION_MODE'] }}</td>
+                <td>{{ session['SESSION_DRX_BEAM'] }}</td>
+                <td>{{ session['CONFIG_FILE'] }}</td>
+                <td>{{ session['CAL_DIR'] }}</td>
+                <td>{{ session['STATUS'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    
+</body>
+</html>

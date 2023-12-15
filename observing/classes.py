@@ -7,6 +7,12 @@ class ObsType(Enum):
     fast = 'FAST'
     slow = 'SLOW'
 
+class EphemModes(Enum):
+    trk_jov ='TRK_JOV'
+    trk_sol = 'TRK_SOL'
+    trk_lun = 'TRK_LUN'
+    trk_radec = 'TRK_RADEC'
+
 class Session:
     """
     Contains information about the controller settings for the session 

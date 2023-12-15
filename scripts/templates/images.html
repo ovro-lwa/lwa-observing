@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-gap: 10px;
+        }
+        .image-grid img {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="image-grid">
+    {% for image in images %}
+    <div>
+        <img src="{{ request.url_for('static', path=image) }}" alt="{{ image }}">
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

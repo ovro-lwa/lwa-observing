@@ -1,7 +1,7 @@
 import os.path
 import click
 from dsautils import dsa_store
-from observing import schedule
+from observing import schedule, makesdf
 from mnc import control
 import sys
 import logging
@@ -39,6 +39,26 @@ def submit_sdf(sdffile, asap, reset):
 
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
+
+
+@cli.command()
+@click.argument('sdffile')
+@click.option('--n-obs', default=1, type=int, help='Number of observations to create')
+@click.option('--sess-mode', default='POWER', type=str, help='Session mode (FAST, SLOW, POWER, VOLT)')
+@click.option('--beam-num', default=None, type=int, help='POWER/VOLT beam number')
+@click.option('--obs-mode', default='TRK_RADEC', type=str, help='Observation mode (e.g. TRK_RADEC, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
+@click.option('--obs-start', default=None, type=str, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
+@click.option('--obs-dur', default=None, type=int, help='Observation duration in milliseconds')
+@click.option('--ra', default=None, type=float, help='RA of object to track (in hours)')
+@click.option('--dec', default=None, type=float, help='Dec of object to track (in degrees)')
+@click.option('--obj-name', default=None, type=str, help='Name of object to track (used as alternative to RA/Dec)')
+@click.option('--int-time', default=None, type=int, help='Integration time in milliseconds')
+def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
+    """ Create an SDF file.
+    """
+
+    makesdf.create(sdffile, n_obs=n_obs, sess_mode=sess_mode, obs_mode=obs_mode, beam_num=beam_num, obs_start=obs_start,
+                   obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time)
 
 
 @cli.command()
