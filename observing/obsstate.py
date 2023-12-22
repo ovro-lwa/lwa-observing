@@ -140,17 +140,17 @@ def add_settings(filename: str, time_loaded: str):
     with connection_factory() as conn:
         c = conn.cursor()
         c.execute("INSERT INTO settings VALUES (?, ?, ?)",
-                  (time_loaded, user, os.path.basename(filename)))
+                  (str(time_loaded), str(user), os.path.basename(filename)))
 
 
 def add_calibrations(filename, beam):
     """Add a new calibration to the calibrations table."""
 
 
-    time_loaded = Time.now()
+    time_loaded = Time.now().mjd
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (time_loaded, filename, beam))
+        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (str(time_loaded), str(filename), str(beam)))
 
 
 def read_latest_setting():
