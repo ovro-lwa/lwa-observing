@@ -1,6 +1,5 @@
 import os
 import getpass
-import time
 from astropy.time import Time
 from pydantic import BaseModel
 import sqlite3
@@ -147,8 +146,8 @@ def add_settings(filename: str, time_loaded: str):
 def add_calibrations(filename, beam):
     """Add a new calibration to the calibrations table."""
 
-    time_loaded = Time.now()
 
+    time_loaded = Time.now()
     with connection_factory() as conn:
         c = conn.cursor()
         c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (time_loaded, filename, beam))
