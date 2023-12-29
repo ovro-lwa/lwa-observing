@@ -100,13 +100,14 @@ def add_session(sdffile: str):
 
     assert os.path.exists(sdffile), f"{sdffile} does not exist"
     dd = parsesdf.sdf_to_dict(sdffile)
-    now = Time.now()
+    now = Time.now().mjd
+
     # convert lists to comma-separated strings
     for key, value in dd['SESSION'].items():
         if isinstance(value, list):
             dd['SESSION'][key] = ', '.join(map(str, value))
 
-    session = Session(**dd['SESSION'], time_loaded=now.mjd, STATUS='scheduled')
+    session = Session(**dd['SESSION'], time_loaded=str(now), STATUS='scheduled')
 
     with connection_factory() as conn:
         c = conn.cursor()
@@ -147,10 +148,10 @@ def add_calibrations(filename, beam):
     """Add a new calibration to the calibrations table."""
 
 
-    time_loaded = Time.now().mjd
+    now = Time.now().mjd
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (str(time_loaded), str(filename), str(beam)))
+        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (str(now), str(filename), str(beam)))
 
 
 def read_latest_setting():
@@ -179,14 +180,17 @@ def update_session(session_id, status):
 
 
 def iterate_max_session_id():
-    conn = sqlite3.connect(DBPATH)
-    c = conn.cursor()
-    c.execute("SELECT MAX(session_id) FROM sessions")
-    try:
-        max_session_id = int(c.fetchone()[0])
-    except TypeError:
-        max_session_id = 0
-    conn.close()
+    """ Return the 1 plus the maximum session_id in the database.
+    """
+
+    with connection_factory() as conn:
+        c = conn.cursor()
+        c.execute("SELECT MAX(session_id) FROM sessions")
+        try:
+            max_session_id = int(c.fetchone()[0])
+        except TypeError:
+            max_session_id = 0
+
     return str(max_session_id+1)
 
 

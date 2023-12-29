@@ -22,8 +22,8 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         try:
             sess_id = obsstate.iterate_max_session_id()
         except:
-            print(f"No Session ID provided and could not access obsstate. Setting random Session ID of {sess_id}")
             sess_id = random.randint(0, 10000)
+            print(f"No Session ID provided and could not access obsstate. Setting random Session ID of {sess_id}")
 
     if sess_mode is None:
         sess_mode = input(f"Enter a session mode of {classes.ObsType.__name__}")
