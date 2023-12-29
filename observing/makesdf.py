@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from astropy.time import Time
 from datetime import timedelta
-from observing.classes import ObsType, EphemModes
+from observing import obsstate, classes
 import random
 import os
 import logging
@@ -19,13 +19,16 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
     sdf_text = ''
 
     if sess_id is None:
-        sess_id = random.randint(0, 1000)
-        print(f"No Session ID provided. Setting random Session ID of {sess_id}")
+        try:
+            sess_id = obsstate.iterate_max_session_id()
+        except:
+            sess_id = random.randint(0, 10000)
+            print(f"No Session ID provided and could not access obsstate. Setting random Session ID of {sess_id}")
 
     if sess_mode is None:
-        sess_mode = input(f"Enter a session mode of {ObsType.__name__}")
+        sess_mode = input(f"Enter a session mode of {classes.ObsType.__name__}")
 
-    sess_mode = ObsType(sess_mode)
+    sess_mode = classes.ObsType(sess_mode)
     
     if sess_mode.name not in ["FAST", "SLOW"]:
         if beam_num is None:
@@ -87,15 +90,15 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
     print(f"Making observation {obs_count}")
     if obs_mode is None:
         if sess_mode.name in ['POWER', 'VOLT']:
-            obs_mode = EphemModes('TRK_RADEC')
+            obs_mode = classes.EphemModes('TRK_RADEC')
             logger.info("no obs_mode provided, assuming TRK_RADEC")
     elif obs_mode in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
-        obs_mode = EphemModes(obs_mode)
+        obs_mode = classes.EphemModes(obs_mode)
         obj_name = obs_mode.name.lstrip('TRK_')
         ra = 0.
         dec = 0.
     else:
-        obs_mode = EphemModes(obs_mode)
+        obs_mode = classes.EphemModes(obs_mode)
 
     if sess_mode.name in ['POWER', 'VOLT']:
         if ra is None and dec is None and obj_name is None:
@@ -175,7 +178,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f'OBS_START_MJD   {mjd_start}\n'
     lines += f'OBS_START_MPM   {mpm}\n'
     lines += f"OBS_START       UTC {start_time.replace('-',' ').replace('T',' ')}\n"
-    lines += f"OBS_DUR         {duration}\n"
+    lines += f"OBS_DUR         {int(duration)}\n"
     lines += f"OBS_INT_TIME    {integration_time}\n"
     lines += f"OBS_DUR+        {duration_lf}\n"
 
