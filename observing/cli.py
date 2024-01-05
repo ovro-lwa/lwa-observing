@@ -47,7 +47,7 @@ def submit_sdf(sdffile, asap, reset):
 @click.option('--sess-mode', default='POWER', type=str, help='Session mode (FAST, SLOW, POWER, VOLT)')
 @click.option('--beam-num', default=None, type=int, help='POWER/VOLT beam number')
 @click.option('--obs-mode', default='TRK_RADEC', type=str, help='Observation mode (e.g. TRK_RADEC, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
-@click.option('--obs-start', default=None, type=str, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
+@click.option('--obs-start', default="now", type=str, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
 @click.option('--obs-dur', default=None, type=int, help='Observation duration in milliseconds')
 @click.option('--ra', default=None, type=float, help='RA of object to track (in hours)')
 @click.option('--dec', default=None, type=float, help='Dec of object to track (in degrees)')
