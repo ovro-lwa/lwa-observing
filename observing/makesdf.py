@@ -94,7 +94,12 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
             logger.info("no obs_mode provided, assuming TRK_RADEC")
     elif obs_mode in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
         obs_mode = classes.EphemModes(obs_mode)
-        obj_name = obs_mode.name.lstrip('TRK_')
+        if 'SOL' in obs_mode.name:
+            obj_name = 'Sun'
+        elif 'LUN' in obs_mode.name:
+            obj_name = 'Moon'
+        elif 'JOV' in obs_mode.name:
+            obj_name = 'Jupiter'
         ra = 0.
         dec = 0.
     else:
