@@ -81,9 +81,10 @@ def runrow(rows):
             logger.info(f"Waiting until MJD {mjd}...")
             while mjd - Time.now().mjd > 1/(24*3600):
                 sleep(0.49)
-        elif mjd - Time.now().mjd < -10/(24*3600):
-            logger.warning(f"Skipping command at MJD {mjd}...")
-            continue
+# no longer skipping late rows
+#        elif mjd - Time.now().mjd < -10/(24*3600):
+#            logger.warning(f"Skipping command at MJD {mjd}...")
+#            continue
         else:
             logger.info("Submitting next command...")
 
