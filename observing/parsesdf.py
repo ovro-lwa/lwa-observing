@@ -113,25 +113,12 @@ def make_obs_list(inp:dict):
             pass
             
         if session.obs_type == ObsType.power or session.obs_type == ObsType.volt:
-            try:
-                ra = inp['OBSERVATIONS'][i]['OBS_RA']
-            except:
-                logger.warning('Need to give RA or name of object for a beam observation')
-                ra = None
-            try:
-                dec = inp['OBSERVATIONS'][i]['OBS_DEC']
-            except:
-                logger.warning('No declination given, assuming the RA input is the name of an object')
-                dec = None
-            try:
-                int_time = inp['OBSERVATIONS'][i]['OBS_INT_TIME']
-            except:
-                int_time = None
-                logger.warning('No integration time given. Assuming 1 ms')
-            try:
-                obj_name = inp['OBSERVATIONS'][i]['OBS_TARGET']
-            except:
-                obj_name = None
+            ra = inp['OBSERVATIONS'][i].get('OBS_RA', None)
+            dec = inp['OBSERVATIONS'][i].get('OBS_DEC', None)
+            int_time = inp['OBSERVATIONS'][i].get('OBS_INT_TIME', None)
+            obj_name = inp['OBSERVATIONS'][i].get('OBS_TARGET', None)
+            if obj_name is None and ra is None and dec is None:
+                logger.warning("OBS_TARGET or OBS_RA/DEC must be defined")
 
             if session.obs_type == ObsType.volt:
                 try:
