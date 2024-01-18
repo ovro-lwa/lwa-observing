@@ -13,13 +13,14 @@ from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
 from pandas import concat, DataFrame
 from astropy.time import Time
-from mnc import control  # inherited by threads
+from mnc import control, common  # inherited by threads
 from observing import parsesdf, schedule, obsstate
 from dsautils import dsa_store
 import logging
 
-logging.basicConfig(level=logging.INFO)  # This configures the root logger
-logger = logging.getLogger(__name__)
+logger = common.get_logger(__name__)
+#logging.basicConfig(level=logging.INFO)  # This configures the root logger
+#logger = logging.getLogger(__name__)
 
 def sched_update(sched, mode='buffer'):
     """ Take a schedule or list of schedules, concatenate and sort them.
@@ -86,7 +87,7 @@ def runrow(rows):
 #            logger.warning(f"Skipping command at MJD {mjd}...")
 #            continue
         else:
-            logger.info("Submitting next command...")
+            logger.info(f"Submitting command:  {row.command}")
 
         try:
             exec(row.command)
