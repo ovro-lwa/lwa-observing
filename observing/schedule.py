@@ -17,8 +17,10 @@ def create_dict(sched):
     if len(sched.columns) > 1:
         for ss in set(sched.session_mode_name):
             session, mode = ss.split("_")
+            if mode not in dd:
+                dd[mode] = {}
             times = sched[sched.session_mode_name == ss].index    
-            dd[mode] = {ss: [times.min(), times.max()]}   # time range per session_mode_name per mode
+            dd[mode][ss] = [times.min(), times.max()]   # time range per session_mode_name per mode
 
     return dd
 
