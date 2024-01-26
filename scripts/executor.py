@@ -107,8 +107,8 @@ if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
-    mp.set_start_method('spawn')
-    pool = mp.Pool(processes=8)
+    ctx = mp.get_context('spawn')
+    pool = ctx.Pool(processes=8)
     ls = dsa_store.DsaStore()
 
     logger.info("Set up ProcessPool and DsaStore")
