@@ -147,8 +147,12 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
 
     start = obs_list[0].obs_start
     ts = start - startbuffer/3600/24  # do the control command  before the start of the first observation
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
 
     # handy name 
     session_mode_name = f"{session.session_id}_{session.obs_type.value}"
@@ -183,8 +187,12 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
 
     start = obs_list[0].obs_start
     ts = start - startbuffer/3600/24  # do the control command  before the start of the first observation
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
 
     # handy name 
     session_mode_name = f"{session.session_id}_{session.obs_type.value}"
@@ -240,8 +248,12 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
     t0 = obs_list[0].obs_start
     ts = t0 - dt
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
@@ -316,8 +328,12 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
     t0 = obs_list[0].obs_start
     ts = t0 - dt
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         

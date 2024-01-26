@@ -9,7 +9,8 @@ Created on Mon Jun  5 09:59:15 2023
 import os.path
 import sys
 from time import sleep
-from concurrent.futures import ProcessPoolExecutor, wait, as_completed
+
+import multiprocessing as mp
 
 from pandas import concat, DataFrame
 from astropy.time import Time
@@ -61,7 +62,7 @@ def submit_next(sched, pool):
     mjd = row.name
     if mjd - Time.now().mjd < 2/(24*3600):
         rows = sched[sched.session_id == row.session_id]
-        fut = pool.submit(runrow, rows)
+        fut = pool.apply_async(runrow, rows)
         schedule.put_submitted(rows)
         try:
             obsstate.update_session(row['session_id'], 'observing')
@@ -106,7 +107,8 @@ if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
-    pool = ProcessPoolExecutor(max_workers = 8)
+    mp.set_start_method('spawn')
+    pool = mp.Pool(processes=8)
     ls = dsa_store.DsaStore()
 
     logger.info("Set up ProcessPool and DsaStore")
@@ -179,12 +181,11 @@ if __name__ == "__main__":
                     logger.info("Schedule contains 0 commands.")
 
             # clean up futures
-#            for fut in futures:
-#                if fut.done():
-#                    print(f"Completed command: {fut.result()}")
-#                elif fut.cancelled():
-#                    print(f"Cancelled command: {fut.result()}")
-            futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
+            for fut in futures:
+                if fut.successful():
+                    logger.info(f"Completed command: {fut.result()}")
+                    futures.remove(fut)
+#            futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
             sleep(0.49)  # at least two per second
         except KeyboardInterrupt:
             logger.info("Interrupting execution of schedule. Clearing schedule and waiting on submissions (Ctrl-C again to interrupt)...")
