@@ -115,7 +115,7 @@ def sched_update(sched, mode='buffer'):
             include = [DataFrame([])]
             for s0 in sched:
                 if len(s0):
-                    if s0.index[0] > Time.now().mjd:
+                    if s0.index[0] > time.Time.now().mjd:
                         include.append(s0)
                     else:
                         logger.warning(f"Removing session starting at {s0.index[0]}")
@@ -139,7 +139,7 @@ def submit_next(sched, pool):
 
     row = sched.iloc[0]
     mjd = row.name
-    if mjd - Time.now().mjd < 2/(24*3600):
+    if mjd - time.Time.now().mjd < 2/(24*3600):
         rows = sched[sched.session_id == row.session_id]
         print(rows)
         fut = pool.apply_async(func=runrow, args=(rows,))
@@ -159,12 +159,12 @@ def runrow(rows):
     """
 
     for mjd, row in rows.iterrows():
-        if mjd - Time.now().mjd > 1/(24*3600):
+        if mjd - time.Time.now().mjd > 1/(24*3600):
             logger.info(f"Waiting until MJD {mjd}...")
-            while mjd - Time.now().mjd > 1/(24*3600):
+            while mjd - time.Time.now().mjd > 1/(24*3600):
                 sleep(0.49)
 # no longer skipping late rows
-#        elif mjd - Time.now().mjd < -10/(24*3600):
+#        elif mjd - time.Time.now().mjd < -10/(24*3600):
 #            logger.warning(f"Skipping command at MJD {mjd}...")
 #            continue
         else:
