@@ -143,7 +143,7 @@ def submit_next(sched, pool):
         rows = sched[sched.session_id == row.session_id]
         print(rows)
         fut = pool.apply_async(func=runrow, args=(rows,))
-        schedule.put_submitted(rows)
+        put_submitted(rows)
         try:
             obsstate.update_session(row['session_id'], 'observing')
         except Exception as exc:
