@@ -141,7 +141,8 @@ def submit_next(sched, pool):
     mjd = row.name
     if mjd - Time.now().mjd < 2/(24*3600):
         rows = sched[sched.session_id == row.session_id]
-        fut = pool.apply_async(runrow, rows)
+        print(rows)
+        fut = pool.apply_async(func=runrow, args=(rows,))
         schedule.put_submitted(rows)
         try:
             obsstate.update_session(row['session_id'], 'observing')
