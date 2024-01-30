@@ -1,8 +1,8 @@
 from dsautils import dsa_store
 from astropy import time
-import sys
 import logging
 from dsautils import dsa_store
+from pandas import concat, DataFrame
 
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
@@ -101,4 +101,82 @@ def print_sched(mode=None):
             for kk2,vv2 in dd2[mode].items():
                 logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
 
+
+def sched_update(sched, mode='buffer'):
+    """ Take a schedule or list of schedules, concatenate and sort them.
+    Will either merge input list of scheds or get new sched from etcd set.
+    If mode=='asap', then old session will not be removed.
+    """
+
+    if isinstance(sched, list):
+        if mode == 'asap':
+            sched = concat(sched)
+        else:
+            include = [DataFrame([])]
+            for s0 in sched:
+                if len(s0):
+                    if s0.index[0] > Time.now().mjd:
+                        include.append(s0)
+                    else:
+                        logger.warning(f"Removing session starting at {s0.index[0]}")
+                        try:
+                            obsstate.update_session(s0.session_id.iloc[0], 'skipped')
+                        except Exception as exc:
+                            logger.warning(f"Could not update session status: {str(exc)}.")
+
+            sched = concat(include)
+        
+    sched.sort_index(inplace=True)
+    logger.info(f"Updated sched to {len(sched)} commands.")
+
+    return sched
+
+
+def submit_next(sched, pool):
+    """ Waits for mjd and submits the session rows to the pool
+    """
+    # alternatively, make sessions into a sequence with one start time
+
+    row = sched.iloc[0]
+    mjd = row.name
+    if mjd - Time.now().mjd < 2/(24*3600):
+        rows = sched[sched.session_id == row.session_id]
+        fut = pool.apply_async(runrow, rows)
+        schedule.put_submitted(rows)
+        try:
+            obsstate.update_session(row['session_id'], 'observing')
+        except Exception as exc:
+            logger.warning("Could not update session status.")
+        sched.drop(index=rows.index, axis=0, inplace=True)
+        return fut
+    else:
+        return None
+
+
+def runrow(rows):
+    """ Runs a list of rows for a session_id in the schedule
+    """
+
+    for mjd, row in rows.iterrows():
+        if mjd - Time.now().mjd > 1/(24*3600):
+            logger.info(f"Waiting until MJD {mjd}...")
+            while mjd - Time.now().mjd > 1/(24*3600):
+                sleep(0.49)
+# no longer skipping late rows
+#        elif mjd - Time.now().mjd < -10/(24*3600):
+#            logger.warning(f"Skipping command at MJD {mjd}...")
+#            continue
+        else:
+            logger.info(f"Submitting command:  {row.command}")
+
+        try:
+            exec(row.command)
+        except Exception as exc:
+            logger.warning(exc)
+
+    # if loop completes, then set session to completed
+    try:
+        obsstate.update_session(row['session_id'], 'completed')
+    except Exception as exc:
+        logger.warning("Could not update session status.")
 
