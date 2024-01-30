@@ -139,6 +139,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
         print(f"Give the integrations time of the observation in milliseconds")
         int_time = int(input())
 
+    assert int_time <= 1024, "Integration time must be less than 1024 ms"
     obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode)
     return obs_text
 

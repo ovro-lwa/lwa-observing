@@ -116,6 +116,8 @@ class Observation:
             self.int_time = int(int_time)
         elif int_time is None:
             self.int_time = 1
+
+        assert self.int_time <= 1024, "Integration time must be less than 1024 ms"
             
         if self.session.obs_type is ObsType.volt:
             self.bw = bw
