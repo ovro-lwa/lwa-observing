@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
             # clean up futures
             for fut in futures:
-                if fut.successful():
+                if fut.ready():
                     logger.info(f"Completed command: {fut.get(timeout=1)}")
                     futures.remove(fut)
             sleep(0.49)  # at least two per second
