@@ -218,7 +218,7 @@ def iterate_max_session_id():
         except TypeError:
             max_session_id = 0
 
-    return str(max_session_id+1)
+    return max_session_id+1
 
 
 def check_and_create_pi(pi_name):
