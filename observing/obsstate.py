@@ -15,11 +15,11 @@ DBPATH = '/opt/devel/pipeline/ovrolwa.db'
 #DBPATH = '/home/pipeline/proj/lwa-shell/lwa-observing/ovrolwa.db'
 
 class Session(BaseModel):
-    time_loaded: str
+    time_loaded: float
     PI_ID: str
     PI_NAME: str
     PROJECT_ID: str
-    SESSION_ID: str 
+    SESSION_ID: int 
     SESSION_MODE: str
     SESSION_DRX_BEAM: str
     CONFIG_FILE: str
@@ -27,17 +27,17 @@ class Session(BaseModel):
     STATUS: str  # e.g., "scheduled" "completed"
 
 class Settings(BaseModel):
-    time_loaded: str
+    time_loaded: float
     user: str
     filename: str
 
 class Calibrations(BaseModel):
-    time_loaded: str
+    time_loaded: float
     filename: str
     beam: str
 
 class Product(BaseModel):
-    time_loaded: str
+    time_loaded: float
     filename: str
     beam: str
 
@@ -58,13 +58,13 @@ def create_db():
         c = conn.cursor()
         c.executescript('''
             CREATE TABLE IF NOT EXISTS sessions
-            (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text);
+            (time_loaded float, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID integer, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text);
             
             CREATE TABLE IF NOT EXISTS settings
-            (time_loaded text, user text, filename text);
+            (time_loaded float, user text, filename text);
             
             CREATE TABLE IF NOT EXISTS calibrations
-            (time_loaded text, filename text, beam text);
+            (time_loaded float, filename text, beam text);
                         
             CREATE TABLE IF NOT EXISTS pis
             (PI_ID integer, PI_NAME text);
@@ -127,7 +127,7 @@ def add_session(sdffile: str):
         if isinstance(value, list):
             dd['SESSION'][key] = ', '.join(map(str, value))
 
-    session = Session(**dd['SESSION'], time_loaded=str(now), STATUS='scheduled')
+    session = Session(**dd['SESSION'], time_loaded=float(now), STATUS='scheduled')
 
     with connection_factory() as conn:
         c = conn.cursor()
@@ -144,24 +144,23 @@ def add_session(sdffile: str):
                    session.STATUS))
 
 
-def add_settings(filename: str, time_loaded: str):
+def add_settings(filename: str):
     """Add settings to the database.
 
     Parameters
     ----------
     filename : str
         Name of the settings file.
-    time_loaded : str
-        Time the settings file was loaded.
     """
 
     assert os.path.exists(filename), f"{filename} does not exist"
     user = getpass.getuser()
+    time_loaded = Time.now().mjd
 
     with connection_factory() as conn:
         c = conn.cursor()
         c.execute("INSERT INTO settings VALUES (?, ?, ?)",
-                  (str(time_loaded), str(user), os.path.basename(filename)))
+                  (float(time_loaded), str(user), os.path.basename(filename)))
 
 
 def add_calibrations(filename, beam):
@@ -171,7 +170,7 @@ def add_calibrations(filename, beam):
     now = Time.now().mjd
     with connection_factory() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (str(now), str(filename), str(beam)))
+        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (float(now), str(filename), str(beam)))
 
 
 def add_pi(pi_id, pi_name):
@@ -253,17 +252,17 @@ def reset_table(table):
         if table == 'sessions':
             c.execute('''
                 CREATE TABLE sessions
-                (time_loaded text, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID text, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
+                (time_loaded float, PI_ID text, PI_NAME text, PROJECT_ID text, SESSION_ID integer, SESSION_MODE text, SESSION_DRX_BEAM text, CONFIG_FILE text, CAL_DIR text, STATUS text)
             ''')
         elif table == 'settings':
             c.execute('''
                 CREATE TABLE settings
-                (time_loaded text, user text, filename text)
+                (time_loaded float, user text, filename text)
             ''')
         elif table == 'calibrations':
             c.execute('''
                 CREATE TABLE calibrations
-                (time_loaded text, filename text, beam text)
+                (time_loaded float, filename text, beam text)
             ''')
         elif table == 'pis':
             c.execute('''

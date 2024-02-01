@@ -48,7 +48,7 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
             print("No PI Name provided. Setting the PI Name to Observer")
 
     if pi_id is None:
-        pi_id = obsstate.new_pi_id(pi_name)
+        pi_id = obsstate.check_and_create_pi(pi_name)
         print(f"No PI ID provided. Getting new ID of {pi_id} for user {pi_name}")
 
     if config_file is None:
@@ -148,7 +148,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     """ Create preamble info required for a proper SDF
     """
 
-    lines = 'PI_ID            {:02d}\n'.format(pi_id)
+    lines = f'PI_ID            {pi_id}\n'
     lines += f'PI_NAME          {pi_name}\n\n'
     lines += 'PROJECT_ID       0\n'
     lines += f'SESSION_ID       {session_id}\n'
