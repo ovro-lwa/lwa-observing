@@ -5,6 +5,8 @@ from pydantic import BaseModel
 import sqlite3
 from observing import parsesdf
 import logging
+import random
+import string
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,10 @@ class Product(BaseModel):
     filename: str
     beam: str
 
+class PIs(BaseModel):
+    PI_ID: int
+    PI_NAME: str
+
 
 def connection_factory():
     """Create a connection to the database."""
@@ -59,6 +65,9 @@ def create_db():
             
             CREATE TABLE IF NOT EXISTS calibrations
             (time_loaded text, filename text, beam text);
+                        
+            CREATE TABLE IF NOT EXISTS pis
+            (PI_ID integer, PI_NAME text);
         ''')
 
 
@@ -90,6 +99,17 @@ def read_calibrations():
     with connection_factory() as conn:
         c = conn.cursor()
         c.execute("SELECT * FROM calibrations ORDER BY time_loaded DESC")
+        rows = c.fetchall()
+
+    return rows
+
+
+def read_pis():
+    """Read all PIs from the database"""
+
+    with connection_factory() as conn:
+        c = conn.cursor()
+        c.execute("SELECT * FROM pis ORDER BY PI_ID")
         rows = c.fetchall()
 
     return rows
@@ -154,6 +174,14 @@ def add_calibrations(filename, beam):
         c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (str(now), str(filename), str(beam)))
 
 
+def add_pi(pi_id, pi_name):
+    """Add a new PI to the pis table."""
+
+    with connection_factory() as conn:
+        c = conn.cursor()
+        c.execute("INSERT INTO pis VALUES (?, ?)", (pi_id, pi_name))
+
+
 def read_latest_setting():
     """Read the most recent setting from the database.
     Returns
@@ -194,6 +222,28 @@ def iterate_max_session_id():
     return str(max_session_id+1)
 
 
+def check_and_create_pi(pi_name):
+    """
+    Check if a PI exists in the database, and if not, create one.
+    """
+
+    with connection_factory() as conn:
+        c = conn.cursor()
+        c.execute("SELECT pi_id FROM pis WHERE pi_name = ?", (pi_name,))
+        row = c.fetchone()
+        if row:
+            return row[0]
+        else:
+            c.execute("SELECT MAX(pi_id) FROM pis")
+            try:
+                max_pi_id = int(c.fetchone()[0])
+            except TypeError:
+                max_pi_id = 0
+            new_pi_id = max_pi_id + 1
+            c.execute("INSERT INTO pis VALUES (?, ?)", (new_pi_id, pi_name))
+            return str(new_pi_id)
+
+
 def reset_table(table):
     """Reset the sessions table."""
 
@@ -214,6 +264,11 @@ def reset_table(table):
             c.execute('''
                 CREATE TABLE calibrations
                 (time_loaded text, filename text, beam text)
+            ''')
+        elif table == 'pis':
+            c.execute('''
+                CREATE TABLE pis
+                (PI_ID integer, PI_NAME text)
             ''')
         else:
             raise ValueError(f"{table} is not a valid table name")

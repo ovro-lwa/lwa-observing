@@ -40,16 +40,16 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         beam_num = None
         cal_dir = None
 
-    if pi_id is None:
-        pi_id = random.randint(0, 1000)
-        print(f"No PI ID provided. Setting random PI ID of {pi_id}")
-
     if pi_name is None:
         try:
             pi_name = os.environ["USER"]
         except:
             pi_name = "Observer"
             print("No PI Name provided. Setting the PI Name to Observer")
+
+    if pi_id is None:
+        pi_id = obsstate.new_pi_id(pi_name)
+        print(f"No PI ID provided. Getting new ID of {pi_id} for user {pi_name}")
 
     if config_file is None:
         print("No configuration file specified. Assuming the standard path.")
