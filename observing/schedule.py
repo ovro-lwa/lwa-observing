@@ -120,7 +120,7 @@ def sched_update(sched, mode='buffer'):
                     else:
                         logger.warning(f"Removing session starting at {s0.index[0]}")
                         try:
-                            obsstate.update_session(s0.session_id.iloc[0], 'skipped')
+                            obsstate.update_session(int(s0.session_id.iloc[0]), 'skipped')
                         except Exception as exc:
                             logger.warning(f"Could not update session status: {str(exc)}.")
 
@@ -145,7 +145,7 @@ def submit_next(sched, pool):
         fut = pool.apply_async(func=runrow, args=(rows,))
         put_submitted(rows)
         try:
-            obsstate.update_session(row['session_id'], 'observing')
+            obsstate.update_session(int(row['session_id']), 'observing')
         except Exception as exc:
             logger.warning("Could not update session status.")
         sched.drop(index=rows.index, axis=0, inplace=True)
@@ -177,7 +177,7 @@ def runrow(rows):
 
     # if loop completes, then set session to completed
     try:
-        obsstate.update_session(row['session_id'], 'completed')
+        obsstate.update_session(int(row['session_id']), 'completed')
     except Exception as exc:
         logger.warning("Could not update session status.")
 

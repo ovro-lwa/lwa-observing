@@ -51,7 +51,7 @@ if __name__ == "__main__":
                     sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
                     # remove session from obsstate
                     try:
-                        obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
+                        obsstate.update_session(int(sched.session_id.iloc[0]), 'cancelled')
                     except Exception as exc:
                         logger.warning("Could not update session status.")
             elif 'filename' in event and mode in ['asap', 'buffer']:
