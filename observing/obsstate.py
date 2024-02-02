@@ -5,8 +5,6 @@ from pydantic import BaseModel
 import sqlite3
 from observing import parsesdf
 import logging
-import random
-import string
 
 logger = logging.getLogger(__name__)
 
