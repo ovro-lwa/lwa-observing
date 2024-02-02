@@ -60,6 +60,32 @@ def get_sched():
     return dd, dd2
 
 
+def check_sched(sched):
+    """ Check if sched is requesting a beam that is already scheduled or submitted
+    """
+
+    dd, dd2 = get_sched()
+    sched_dict = create_dict(sched)
+
+    ok = True
+    for kk,vv in sched_dict.items():
+        if kk in dd.keys():
+            for tr in dd[kk].values():
+                _, (t0, t1) = vv.popitem()
+                if (t0 > tr[0] and t0 < tr[1]) or (t1 > tr[0] and t1 < tr[1]):
+                    ok = False
+                    break
+        if not ok:
+            break
+        if kk in dd2.keys():
+            for tr in dd2[kk].values():
+                _, (t0, t1) = vv.popitem()
+                if (t0 > tr[0] and t0 < tr[1]) or (t1 > tr[0] and t1 < tr[1]):
+                    ok = False
+                    break
+    return ok
+
+
 def print_sched(mode=None):
     """ Gets schedule from etcd and prints it
     """

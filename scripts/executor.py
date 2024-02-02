@@ -57,17 +57,21 @@ if __name__ == "__main__":
             elif 'filename' in event and mode in ['asap', 'buffer']:
                 filename = event['filename']
                 if os.path.exists(filename):
-                    logger.info(f"Adding session {filename}")
-                    # add session to obsstate
-                    try:
-                        obsstate.add_session(filename)
-                        logger.info(f'added session {filename}')
-                    except Exception as exc:
-                        logger.warning("Could not add session to obsstate.")
-
+                    logger.info(f"Checking session in {filename}")
                     sched = parsesdf.make_sched(filename, mode=mode)
                     sched.sort_index(inplace=True)
-                    sched0 = schedule.sched_update([sched0, sched], mode=mode)
+
+                    if schedule.check_sched(sched):
+                        logger.info(f"Adding session {filename}")
+                        # add session to obsstate
+                        try:
+                            obsstate.add_session(filename)
+                        except Exception as exc:
+                            logger.warning("Could not add session to obsstate.")
+
+                        sched0 = schedule.sched_update([sched0, sched], mode=mode)
+                    else:
+                        logger.warning(f"Session {filename} conflicts with existing session.")
                 else:
                     logger.warning(f"File {filename} does not exist.")
             else:
