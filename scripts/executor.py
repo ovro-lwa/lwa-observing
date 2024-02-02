@@ -71,6 +71,7 @@ if __name__ == "__main__":
 
                         sched0 = schedule.sched_update([sched0, sched], mode=mode)
                     else:
+                        # should probably log this better or return to cli user
                         logger.warning(f"Session {filename} conflicts with existing session.")
                 else:
                     logger.warning(f"File {filename} does not exist.")
