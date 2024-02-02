@@ -7,7 +7,7 @@ from observing import obsstate as obs
 import os
 import fnmatch
 import logging
-
+from astropy import time
 logging.basicConfig(level=logging.INFO)  # This configures the root logger
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,6 @@ async def get_combined(request: Request):
                     for row in obs.read_calibrations()]
 
     # Fetch data from the settings table
-
     settings = [obs.Settings(time_loaded=row[0], user=row[1], filename=row[2]) 
                 for row in obs.read_settings()]
 
@@ -69,6 +68,12 @@ async def get_combined(request: Request):
                             SESSION_ID=row[4], SESSION_MODE=row[5], SESSION_DRX_BEAM=row[6],
                             CONFIG_FILE=row[7], CAL_DIR=row[8], STATUS=row[9]) for row in obs.read_sessions()]
 
+    # Calculate the time in MJD and as a date string
+    current_time = time.Time.now()
+    mjd = current_time.mjd
+    date_string = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
     # Render the data into three tables
     return templates.TemplateResponse("combined.html", {"request": request, "calibrations": calibrations,
-                                                        "settings": settings, "sessions": sessions})
+                                                        "settings": settings, "sessions": sessions,
+                                                        "mjd": mjd, "date_string": date_string})
