@@ -289,7 +289,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
 
-    ts += obs.obs_dur/24/3600
+    ts += obs.obs_dur/1e3/24/3600
     cmd = "print('Observation complete')"
     d.update({ts:cmd})
 
@@ -370,7 +370,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
 
-    ts += obs.obs_dur/24/3600
+    ts += obs.obs_dur/1e3/24/3600
     cmd = "print('Observation complete')"
     d.update({ts:cmd})
     
