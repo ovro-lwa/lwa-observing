@@ -3,6 +3,7 @@ from astropy import time
 import logging
 from dsautils import dsa_store
 from pandas import concat, DataFrame
+from observing import obsstate
 
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
