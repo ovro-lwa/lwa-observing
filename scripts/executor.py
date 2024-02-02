@@ -100,9 +100,9 @@ if __name__ == "__main__":
                 if len(sched0):
                     if sched0.iloc[0].name != nextmjd:
                         nextmjd = sched0.iloc[0].name
-                        logger.info(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
+                        logger.info(f"Next session at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
                 else:
-                    logger.info("Schedule contains 0 commands.")
+                    logger.info("Schedule contains 0 session commands.")
 
             # clean up futures
             for fut in futures:
