@@ -344,7 +344,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     if session.cal_directory is not None and session.do_cal == True:
         # re-assign calibration directory if it is specified
         ts += 0.1/(24*3600)
-        cmd = f"con.conf(['xengine']['cal_directory'] = '{session.cal_directory}')"
+        cmd = f"con.conf['xengine']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
     # Configure for the beam
