@@ -18,7 +18,7 @@ LimitMEMLOCK=infinity
 # Setup the environment
 Environment=PYTHONUNBUFFERED=1
 WorkingDirectory=/home/pipeline/proj/lwa-shell/lwa-observing
-ExecStart=/bin/bash -ec 'source /opt/miniconda3/bin/activate deployment && GRPC_ENABLE_FORK_SUPPORT=true python scripts/executor.py'
+ExecStart=/bin/bash -ec 'source /opt/miniconda3/bin/activate development && python scripts/executor.py'
 
 #Restart=always
 #RestartSec=10
