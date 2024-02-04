@@ -123,10 +123,10 @@ def make_obs_list(inp:dict):
             if session.obs_type == ObsType.volt:
                 try:
                     bw = inp['OBSERVATIONS'][i]['OBS_BW']
-                    freq1 = inp['OBSERVATIONS'][i]['OBS_STP_FREQ1[1]']
-                    freq2 = inp['OBSERVATIONS'][i]['OBS_STP_FREQ2[1]']
+                    freq1 = inp['OBSERVATIONS'][i]['OBS_FREQ1']
+                    freq2 = inp['OBSERVATIONS'][i]['OBS_FREQ2']
                 except:
-                    raise Exception('voltage observation requires defining OBS_BW, OBS_STP_FREQ1[1], and OBS_STP_FREQ2[1]')
+                    raise Exception('voltage observation requires defining OBS_BW, OBS_FREQ1], and OBS_FREQ2')
             else:
                 bw, freq1, freq2 = None, None, None
 
