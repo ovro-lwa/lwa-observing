@@ -196,10 +196,10 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     if dec is not None:
         lines += f"OBS_DEC         %+.9f\n" % (dec)
 
-    lines += "OBS_STP_FREQ1       1161394218\n"
-    lines += "OBS_STP_FREQ1+      53.000000009 MHz\n"
-    lines += "OBS_STP_FREQ2       1599656187\n"
-    lines += "OBS_STP_FREQ2+      73.000000010 MHz\n"
+    lines += "OBS_STP_FREQ1[1]       1161394218\n"
+    lines += "OBS_STP_FREQ1+[1]      53.000000009 MHz\n"
+    lines += "OBS_STP_FREQ2[1]       1599656187\n"
+    lines += "OBS_STP_FREQ2+[1]      73.000000010 MHz\n"
     lines += "OBS_BW          7\n"
     lines += "OBS_BW+         19.600 MHz\n\n"
 
