@@ -1,8 +1,8 @@
-from dsautils import dsa_store
+from time import sleep
+from pandas import concat, DataFrame
 from astropy import time
 import logging
 from dsautils import dsa_store
-from pandas import concat, DataFrame
 from observing import obsstate
 
 logger = logging.getLogger('observing')
@@ -26,11 +26,17 @@ def create_dict(sched):
     return dd
 
 
-def put_sched(sched):
+def put_sched(sched=None):
     """ Takes schedule dataframe and sets schedule in etcd
+    If no schedule provided, etcd key is reset.
     """
-
-    sched_dict = create_dict(sched)
+    
+    if sched is not None:
+        sched_dict = create_dict(sched)
+    else:
+        logger.info("Resetting submitted/scheduled info in etcd")
+        sched_dict = {}
+        ls.put_dict('/mon/observing/submitted', {})
     ls.put_dict('/mon/observing/schedule', sched_dict)
 
 
