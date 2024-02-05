@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     sched = parsesdf.make_sched(filename, mode=mode)
                     sched.sort_index(inplace=True)
 
-                    if schedule.check_sched(sched):
+                    if not schedule.is_conflicted(sched):
                         logger.info(f"Adding session {filename}")
                         # add session to obsstate
                         try:

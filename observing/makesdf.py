@@ -6,6 +6,7 @@ from observing import obsstate, classes
 import random
 import os
 import logging
+import getpass
 
 logger = logging.getLogger('observing')
 
@@ -41,15 +42,15 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         cal_dir = None
 
     if pi_name is None:
-        try:
-            pi_name = os.environ["USER"]
-        except:
-            pi_name = "Observer"
-            print("No PI Name provided. Setting the PI Name to Observer")
+        pi_name = getpass.getuser()
 
     if pi_id is None:
-        pi_id = obsstate.check_and_create_pi(pi_name)
-        print(f"No PI ID provided. Getting new ID of {pi_id} for user {pi_name}")
+        try:
+            pi_id = obsstate.check_and_create_pi(pi_name)
+            logger.info(f"No PI ID provided. Getting new ID of {pi_id} for user {pi_name}")
+        except:
+            pi_id = random.randint(0, 10000)
+            logger.warn(f"No PI ID provided and could not access obsstate. Setting random PI ID of {pi_id} for user {pi_name}")
 
     if config_file is None:
         print("No configuration file specified. Assuming the standard path.")

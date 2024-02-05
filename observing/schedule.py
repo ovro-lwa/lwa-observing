@@ -48,43 +48,40 @@ def put_submitted(rows):
 
 
 def get_sched():
-    """ Gets schedule from etcd
+    """ Gets scheduled and active observations from etcd
     """
 
-    dd = ls.get_dict('/mon/observing/schedule')
-    dd2 = ls.get_dict('/mon/observing/submitted')
+    scheduled = ls.get_dict('/mon/observing/schedule')
+    active = ls.get_dict('/mon/observing/submitted')
 
     # use {} instead of None
-    dd = dd if dd is not None else {}
-    dd2 = dd2 if dd2 is not None else {}
+    scheduled = scheduled if scheduled is not None else {}
+    active = active if active is not None else {}
 
-    return dd, dd2
+    return scheduled, active
 
 
-def check_sched(sched):
+def is_conflicted(sched):
     """ Check if sched is requesting a beam that is already scheduled or submitted
     """
 
     dd, dd2 = get_sched()
     sched_dict = create_dict(sched)
 
-    ok = True
     for kk,vv in sched_dict.items():
         if kk in dd.keys():
             for tr in dd[kk].values():
                 _, (t0, t1) = vv.popitem()
                 if (t0 > tr[0] and t0 < tr[1]) or (t1 > tr[0] and t1 < tr[1]):
-                    ok = False
-                    break
+                    return True
         if not ok:
             break
         if kk in dd2.keys():
             for tr in dd2[kk].values():
                 _, (t0, t1) = vv.popitem()
                 if (t0 > tr[0] and t0 < tr[1]) or (t1 > tr[0] and t1 < tr[1]):
-                    ok = False
-                    break
-    return ok
+                    return True
+    return False
 
 
 def print_sched(mode=None):

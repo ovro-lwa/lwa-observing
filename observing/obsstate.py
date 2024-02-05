@@ -158,7 +158,7 @@ def add_settings(filename: str):
     with connection_factory() as conn:
         c = conn.cursor()
         c.execute("INSERT INTO settings VALUES (?, ?, ?)",
-                  (float(time_loaded), str(user), os.path.basename(filename)))
+                  (time_loaded, str(user), os.path.basename(filename)))
 
 
 def add_calibrations(filename, beam):
@@ -232,13 +232,14 @@ def check_and_create_pi(pi_name):
             return row[0]
         else:
             c.execute("SELECT MAX(pi_id) FROM pis")
-            try:
-                max_pi_id = int(c.fetchone()[0])
-            except TypeError:
+            max_pi_id0 = c.fetchone()
+            if len(max_pi_id0):
+                max_pi_id = int(max_pi_id0[0])
+            else:
                 max_pi_id = 0
             new_pi_id = max_pi_id + 1
             c.execute("INSERT INTO pis VALUES (?, ?)", (new_pi_id, pi_name))
-            return str(new_pi_id)
+        return new_pi_id
 
 
 def reset_table(table):
