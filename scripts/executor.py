@@ -28,7 +28,7 @@ if __name__ == "__main__":
     """
 
     ctx = mp.get_context('spawn')
-    pool = ctx.Pool(processes=8)
+    pool = ctx.Pool(processes=8, maxtasksperchild=1)
     ls = dsa_store.DsaStore()
 
     logger.info("Set up ProcessPool and DsaStore")
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                     logger.info(f"Completed command: {fut.get(timeout=1)}")
             except KeyboardInterrupt:
                 logger.info(f"Interrupting again. Cancelling {len(futures)} submissions...")
-# not available in spawned processes?
+# not available in spawned processes
 #                for fut in futures:
 #                    res = fut.cancel()
 #                    if not res:

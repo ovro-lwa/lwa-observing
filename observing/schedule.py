@@ -71,22 +71,26 @@ def is_conflicted(sched):
     """ Check if sched is requesting a beam that is already scheduled or submitted
     """
 
-    dd, dd2 = get_sched()
+    scheduled, active = get_sched()
     sched_dict = create_dict(sched)
 
+    # iterate over sched_dict keys of unique observing modes to get values of (start, stop)
     for kk,vv in sched_dict.items():
-        if kk in dd.keys():
-            for tr in dd[kk].values():
+
+        # if observing mode is scheduled, compare (start, stop)
+        if kk in scheduled.keys():
+            for trange in scheduled[kk].values():
                 _, (t0, t1) = vv.popitem()
-                if (t0 > tr[0] and t0 < tr[1]) or (t1 > tr[0] and t1 < tr[1]):
+                if (t0 > trange[0] and t0 < trange[1]) or (t1 > trange[0] and t1 < trange[1]):
                     return True
-        if not ok:
-            break
-        if kk in dd2.keys():
-            for tr in dd2[kk].values():
+
+        # if observing mode is active, compare (start, stop)
+        if kk in active.keys():
+            for trange in active[kk].values():
                 _, (t0, t1) = vv.popitem()
-                if (t0 > tr[0] and t0 < tr[1]) or (t1 > tr[0] and t1 < tr[1]):
+                if (t0 > trange[0] and t0 < trange[1]) or (t1 > trange[0] and t1 < trange[1]):
                     return True
+
     return False
 
 
