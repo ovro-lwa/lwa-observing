@@ -42,11 +42,7 @@
     <div class="container">
         <div class="image-list">
             {% for image in images %}
-                {% if image.endswith('.html') %}
-                    <p><a href="#" onclick="loadHTML('/static/{{ image }}')">{{ image }}</a></p>
-                {% else %}
-                    <p><a href="#" onclick="loadImage('/static/{{ image }}')">{{ image }}</a></p>
-                {% endif %}
+                <p><a href="#" onclick="loadImage('/static/{{ image }}')">{{ image }}</a></p>
             {% endfor %}
         </div>
         <div class="image-panel">
@@ -55,20 +51,6 @@
     </div>
     
     <script>
-        function loadHTML(src) {
-            function loadHTML(src) {
-                fetch(src)
-                    .then(response => response.text())
-                    .then(html => {
-                        const container = document.querySelector('.image-panel');
-                        container.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('Error loading HTML:', error);
-                    });
-            }
-        }
-        
         function loadImage(src) {
             document.getElementById('image').src = src;
         }
