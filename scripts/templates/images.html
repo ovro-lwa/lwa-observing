@@ -45,7 +45,7 @@
                 {% if image.endswith('.html') %}
                     <p><a href="#" onclick="loadHTML('/static/{{ image }}')">{{ image }}</a></p>
                 {% else %}
-                    <p><a href="#" onclick="loadImage('/static/{{ image }}')"><img src="/static/{{ image }}" alt="{{ image }}"></a></p>
+                    <p><a href="#" onclick="loadImage('/static/{{ image }}')">{{ image }}</a></p>
                 {% endif %}
             {% endfor %}
         </div>
