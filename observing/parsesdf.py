@@ -81,7 +81,11 @@ def make_obs_list(inp:dict):
     :rtype: Session object, list of Observation objects
 
     """
-    obs_type = inp['SESSION']['SESSION_MODE']
+    try:
+        obs_type = inp['SESSION']['SESSION_MODE']
+    except KeyError:
+        logger.warning("Missing SESSION_MODE keyword, assuming VOLT")
+        obs_type = ObsType.volt
     session_id = inp['SESSION']['SESSION_ID']
     config_file = inp['SESSION'].get('CONFIG_FILE', None)
         
