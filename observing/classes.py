@@ -70,7 +70,7 @@ class Observation:
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode
     
-    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None):
+    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None, gain=None):
 
         # overload obs_mode for some targets
         if obj_name is not None:
@@ -121,5 +121,6 @@ class Observation:
             self.bw = bw
             self.freq1 = freq1
             self.freq2 = freq2
+            self.gain = gain
 
         return
