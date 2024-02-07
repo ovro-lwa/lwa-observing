@@ -80,16 +80,16 @@ def is_conflicted(sched):
         # if observing mode is scheduled, compare (start, stop)
         if kk in scheduled.keys():
             for trange in scheduled[kk].values():
-                _, (t0, t1) = vv.popitem()
-                if (t0 > trange[0] and t0 < trange[1]) or (t1 > trange[0] and t1 < trange[1]):
-                    return True
+                for (t0, t1) in vv.values():
+                    if (t0 >= trange[0] and t0 <= trange[1]) or (t1 >= trange[0] and t1 <= trange[1]):
+                        return True
 
         # if observing mode is active, compare (start, stop)
         if kk in active.keys():
             for trange in active[kk].values():
-                _, (t0, t1) = vv.popitem()
-                if (t0 > trange[0] and t0 < trange[1]) or (t1 > trange[0] and t1 < trange[1]):
-                    return True
+                for (t0, t1) in vv.values():
+                    if (t0 >= trange[0] and t0 <= trange[1]) or (t1 >= trange[0] and t1 <= trange[1]):
+                        return True
 
     return False
 
