@@ -42,11 +42,11 @@
     <div class="container">
         <div class="image-list">
             {% for image in images %}
-            {% if image.endswith('.html') %}
-                <p><a href="#" onclick="loadHTML('/static/{{ image }}')">{{ image }}</a></p>
-            {% else %}
-                <p><a href="#" onclick="loadImage('/static/{{ image }}')"><img src="/static/{{ image }}" alt="{{ image }}"></a></p>
-            {% endif %}
+                {% if image.endswith('.html') %}
+                    <p><a href="#" onclick="loadHTML('/static/{{ image }}')">{{ image }}</a></p>
+                {% else %}
+                    <p><a href="#" onclick="loadImage('/static/{{ image }}')"><img src="/static/{{ image }}" alt="{{ image }}"></a></p>
+                {% endif %}
             {% endfor %}
         </div>
         <div class="image-panel">
@@ -55,6 +55,10 @@
     </div>
     
     <script>
+        function loadHTML(src) {
+            // Add your logic to load HTML content here
+        }
+        
         function loadImage(src) {
             document.getElementById('image').src = src;
         }
