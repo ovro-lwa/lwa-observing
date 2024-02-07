@@ -48,7 +48,7 @@ async def get_calibrations(request: Request):
 
 @app.get("/images", response_class=HTMLResponse)
 async def get_images(request: Request):
-    images = [f for f in os.listdir(image_dir) if fnmatch.fnmatch(f, '*.png') or fnmatch.fnmatch(f, '*.gif') or fnmatch.fnmatch(f, '*.jpg')]
+    images = [f for f in os.listdir(image_dir) if fnmatch.fnmatch(f, '*.png') or fnmatch.fnmatch(f, '*.gif') or fnmatch.fnmatch(f, '*.jpg') or fnmatch.fnmatch(f, '*.html')]
 
     return templates.TemplateResponse("images.html", {"request": request, "images": images})
 
