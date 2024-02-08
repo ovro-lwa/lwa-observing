@@ -10,6 +10,12 @@ def test_read():
     assert isinstance(d, dict)
 
 
+def test_read_nm():
+    fn = os.path.join(_install_dir, 'test_nm.sdf')
+    d = parsesdf.sdf_to_dict(fn)
+    assert isinstance(d, dict)
+
+
 def test_make():
     fn = os.path.join(_install_dir, 'test.sdf')
     d = parsesdf.sdf_to_dict(fn)
