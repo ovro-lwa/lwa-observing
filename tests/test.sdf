@@ -8,6 +8,8 @@ SESSION_DRX_BEAM       3
 CONFIG_FILE      /home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml
 
 OBS_ID          1
+OBS_START_MJD   60161
+OBS_START_MPM   3300000
 OBS_START       UTC 2023 08 05 00:55:00
 OBS_DUR         60000
 OBS_INT_TIME    100
