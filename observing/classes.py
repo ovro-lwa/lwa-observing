@@ -53,8 +53,11 @@ class Session:
         if self.cal_directory is not None:
             assert os.path.exists(self.cal_directory), f"Calibration directory {self.cal_directory} does not exist."
             
-        valid_beam_nums = range(1,17)
-        if (self.obs_type is ObsType.power or self.obs_type is ObsType.volt) and self.beam_num not in valid_beam_nums:
+        valid_power_beam_nums = range(1,17)
+        if self.obs_type is ObsType.power and self.beam_num not in valid_power_beam_nums:
+            raise Exception("You must specify a valid beam number if you want to observe with a beam")
+        valid_volt_beam_beams = range(1,2)
+        if self.obs_type is ObsType.volt and self.beam_num not in valid_volt_beam_nums:
             raise Exception("You must specify a valid beam number if you want to observe with a beam")
         return
 
