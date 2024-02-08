@@ -130,7 +130,7 @@ def make_obs_list(inp:dict):
                     bw = inp['OBSERVATIONS'][i]['OBS_BW']
                     freq1 = inp['OBSERVATIONS'][i]['OBS_FREQ1']
                     freq2 = inp['OBSERVATIONS'][i]['OBS_FREQ2']
-                    gain = inp['OBSERVATIONS'][i]['OBS_DRX_GAIN']
+                    gain = inp['OBSERVATIONS'][i].get('OBS_DRX_GAIN', None)
                 except:
                     # There is a STEPPED mode that allows a sequence of OBS_STP_* keywords.  That doesn't look
                     # to be supported currently.
