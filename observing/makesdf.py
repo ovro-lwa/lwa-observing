@@ -30,7 +30,7 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
 
     sess_mode = classes.ObsType(sess_mode)
     
-    if sess_mode.name not in ["FAST", "SLOW"]:
+    if sess_mode.value not in ["FAST", "SLOW"]:
         if beam_num is None:
             inp = input("Provide a beam number:")
             beam_num = int(inp)
@@ -89,23 +89,23 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
     print(f"Making observation {obs_count}")
     if obs_mode is None:
-        if sess_mode.name in ['POWER', 'VOLT']:
+        if sess_mode.value in ['POWER', 'VOLT']:
             obs_mode = classes.EphemModes('TRK_RADEC')
             logger.info("no obs_mode provided, assuming TRK_RADEC")
     elif obs_mode in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
         obs_mode = classes.EphemModes(obs_mode)
-        if 'SOL' in obs_mode.name:
+        if 'SOL' in obs_mode.value:
             obj_name = 'Sun'
-        elif 'LUN' in obs_mode.name:
+        elif 'LUN' in obs_mode.value:
             obj_name = 'Moon'
-        elif 'JOV' in obs_mode.name:
+        elif 'JOV' in obs_mode.value:
             obj_name = 'Jupiter'
         ra = 0.
         dec = 0.
     else:
         obs_mode = classes.EphemModes(obs_mode)
 
-    if sess_mode.name in ['POWER', 'VOLT']:
+    if sess_mode.value in ['POWER', 'VOLT']:
         if ra is None and dec is None and obj_name is None:
             coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
             try:
@@ -135,7 +135,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
     if obs_dur is None:
         obs_dur = int(input(f"Give the duration of the observation in milliseconds:"))
 
-    if int_time is None and sess_mode.name == 'POWER': 
+    if int_time is None and sess_mode.value == 'POWER': 
         print(f"Give the integrations time of the observation in milliseconds")
         int_time = int(input())
     if sess_mode.name == 'VOLT':
@@ -154,7 +154,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     lines += f'PI_NAME          {pi_name}\n\n'
     lines += 'PROJECT_ID       0\n'
     lines += f'SESSION_ID       {session_id}\n'
-    lines += f'SESSION_MODE     {session_mode.name.upper()}\n'
+    lines += f'SESSION_MODE     {session_mode.value}\n'
     if beam_num != None:
         lines += f'SESSION_DRX_BEAM       {beam_num}\n'
     lines += f'CONFIG_FILE      {config_dir}\n'
@@ -191,7 +191,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f"OBS_DUR+        {duration_lf}\n"
 
     if obs_mode != None:
-        lines += f"OBS_MODE        {obs_mode.name.upper()}\n"
+        lines += f"OBS_MODE        {obs_mode.value}\n"
 
     if ra is not None:
         lines += f"OBS_RA          %.9f\n" % (ra)
