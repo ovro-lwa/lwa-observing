@@ -21,3 +21,10 @@ def test_make():
     d = parsesdf.sdf_to_dict(fn)
     session, obs_list = parsesdf.make_obs_list(d)
     df = parsesdf.power_beam_obs(obs_list, session)
+
+
+def test_make_nm():
+    fn = os.path.join(_install_dir, 'test_nm.sdf')
+    d = parsesdf.sdf_to_dict(fn)
+    session, obs_list = parsesdf.make_obs_list(d)
+    df = parsesdf.volt_beam_obs(obs_list, session)
