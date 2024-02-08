@@ -7,18 +7,11 @@ Wants=network-online.target
 # Run as the specified user
 Type=simple
 
-# Allow unlimited locked memory
-LimitMEMLOCK=infinity
-
-# Logging
-# StandardOutput=syslog
-# StandardError=syslog
-# SyslogIdentifier=scheduler
-
 # Setup the environment
 Environment=PYTHONUNBUFFERED=1
 WorkingDirectory=/home/pipeline/proj/lwa-shell/lwa-observing
-ExecStart=/bin/bash -ec 'source /opt/miniconda3/bin/activate deployment && GRPC_ENABLE_FORK_SUPPORT=true python scripts/executor.py'
+# ExecStart=/bin/bash -ec 'source /opt/miniconda3/bin/activate development && python scripts/executor.py'  # old
+ExecStart=/opt/devel/pipeline/envs/deployment/bin/python scripts/executor.py
 
 #Restart=always
 #RestartSec=10

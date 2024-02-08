@@ -9,104 +9,26 @@ Created on Mon Jun  5 09:59:15 2023
 import os.path
 import sys
 from time import sleep
-from concurrent.futures import ProcessPoolExecutor, wait, as_completed
 
-from pandas import concat, DataFrame
+import multiprocessing as mp
+
+from pandas import DataFrame
 from astropy.time import Time
-from mnc import control, common  # inherited by threads
+from mnc import common  # inherited by threads
 from observing import parsesdf, schedule, obsstate
 from dsautils import dsa_store
-import logging
 
 logger = common.get_logger(__name__)
 #logging.basicConfig(level=logging.INFO)  # This configures the root logger
 #logger = logging.getLogger(__name__)
-
-def sched_update(sched, mode='buffer'):
-    """ Take a schedule or list of schedules, concatenate and sort them.
-    Will either merge input list of scheds or get new sched from etcd set.
-    If mode=='asap', then old session will not be removed.
-    """
-
-    if isinstance(sched, list):
-        if mode == 'asap':
-            sched = concat(sched)
-        else:
-            include = [DataFrame([])]
-            for s0 in sched:
-                if len(s0):
-                    if s0.index[0] > Time.now().mjd:
-                        include.append(s0)
-                    else:
-                        logger.warning(f"Removing session starting at {s0.index[0]}")
-                        try:
-                            obsstate.update_session(s0.session_id.iloc[0], 'skipped')
-                        except Exception as exc:
-                            logger.warning(f"Could not update session status: {str(exc)}.")
-
-            sched = concat(include)
-        
-    sched.sort_index(inplace=True)
-    logger.info(f"Updated sched to {len(sched)} commands.")
-
-    return sched
-
-
-def submit_next(sched, pool):
-    """ Waits for mjd and submits the session rows to the pool
-    """
-    # alternatively, make sessions into a sequence with one start time
-
-    row = sched.iloc[0]
-    mjd = row.name
-    if mjd - Time.now().mjd < 2/(24*3600):
-        rows = sched[sched.session_id == row.session_id]
-        fut = pool.submit(runrow, rows)
-        schedule.put_submitted(rows)
-        try:
-            obsstate.update_session(row['session_id'], 'observing')
-        except Exception as exc:
-            logger.warning("Could not update session status.")
-        sched.drop(index=rows.index, axis=0, inplace=True)
-        return fut
-    else:
-        return None
-
-
-def runrow(rows):
-    """ Runs a list of rows for a session_id in the schedule
-    """
-
-    for mjd, row in rows.iterrows():
-        if mjd - Time.now().mjd > 1/(24*3600):
-            logger.info(f"Waiting until MJD {mjd}...")
-            while mjd - Time.now().mjd > 1/(24*3600):
-                sleep(0.49)
-# no longer skipping late rows
-#        elif mjd - Time.now().mjd < -10/(24*3600):
-#            logger.warning(f"Skipping command at MJD {mjd}...")
-#            continue
-        else:
-            logger.info(f"Submitting command:  {row.command}")
-
-        try:
-            exec(row.command)
-        except Exception as exc:
-            logger.warning(exc)
-
-    # if loop completes, then set session to completed
-    try:
-        obsstate.update_session(row['session_id'], 'completed')
-    except Exception as exc:
-        logger.warning("Could not update session status.")
-
 
 
 if __name__ == "__main__":
     """ Run commands parsed from SDF.
     """
 
-    pool = ProcessPoolExecutor(max_workers = 8)
+    ctx = mp.get_context('spawn')
+    pool = ctx.Pool(processes=8, maxtasksperchild=1)
     ls = dsa_store.DsaStore()
 
     logger.info("Set up ProcessPool and DsaStore")
@@ -120,7 +42,7 @@ if __name__ == "__main__":
                 # option to reset schedule
                 logger.info("Resetting schedule...")
                 sched0 = DataFrame([])
-                sched0 = sched_update(sched0)
+                sched0 = schedule.sched_update(sched0)
             elif 'filename' in event and mode == 'cancel':
                 filename = event['filename']
                 if os.path.exists(filename):
@@ -129,23 +51,28 @@ if __name__ == "__main__":
                     sched0 = sched0[sched0.session_id != sched.session_id.iloc[0]]
                     # remove session from obsstate
                     try:
-                        obsstate.update_session(sched.session_id.iloc[0], 'cancelled')
+                        obsstate.update_session(int(sched.session_id.iloc[0]), 'cancelled')
                     except Exception as exc:
                         logger.warning("Could not update session status.")
             elif 'filename' in event and mode in ['asap', 'buffer']:
                 filename = event['filename']
                 if os.path.exists(filename):
-                    logger.info(f"Adding session {filename}")
-                    # add session to obsstate
-                    try:
-                        obsstate.add_session(filename)
-                        logger.info(f'added session {filename}')
-                    except Exception as exc:
-                        logger.warning("Could not add session to obsstate.")
-
+                    logger.info(f"Checking session in {filename}")
                     sched = parsesdf.make_sched(filename, mode=mode)
                     sched.sort_index(inplace=True)
-                    sched0 = sched_update([sched0, sched], mode=mode)
+
+                    if not schedule.is_conflicted(sched):
+                        logger.info(f"Adding session {filename}")
+                        # add session to obsstate
+                        try:
+                            obsstate.add_session(filename)
+                        except Exception as exc:
+                            logger.warning("Could not add session to obsstate.")
+
+                        sched0 = schedule.sched_update([sched0, sched], mode=mode)
+                    else:
+                        # should probably log this better or return to cli user
+                        logger.warning(f"Session {filename} conflicts with existing session.")
                 else:
                     logger.warning(f"File {filename} does not exist.")
             else:
@@ -167,24 +94,22 @@ if __name__ == "__main__":
     while True:
         try:
             if len(sched0):
-                fut = submit_next(sched0, pool)    # when time comes, fire and forget
+                fut = schedule.submit_next(sched0, pool)    # when time comes, fire and forget
                 if fut is not None:
                     futures.append(fut)
                     logger.info(f"Submitted one. {len(futures)} futures")
                 if len(sched0):
                     if sched0.iloc[0].name != nextmjd:
                         nextmjd = sched0.iloc[0].name
-                        logger.info(f"Next submission at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
+                        logger.info(f"Next session at MJD {nextmjd}, in {(nextmjd-Time.now().mjd)*24*3600}s")
                 else:
-                    logger.info("Schedule contains 0 commands.")
+                    logger.info("Schedule contains 0 session commands.")
 
             # clean up futures
-#            for fut in futures:
-#                if fut.done():
-#                    print(f"Completed command: {fut.result()}")
-#                elif fut.cancelled():
-#                    print(f"Cancelled command: {fut.result()}")
-            futures = [fut for fut in futures if not fut.done() or not fut.cancelled()]
+            for fut in futures:
+                if fut.ready():
+                    logger.info(f"Completed command: {fut.get(timeout=1)}")
+                    futures.remove(fut)
             sleep(0.49)  # at least two per second
         except KeyboardInterrupt:
             logger.info("Interrupting execution of schedule. Clearing schedule and waiting on submissions (Ctrl-C again to interrupt)...")
@@ -192,14 +117,16 @@ if __name__ == "__main__":
             for wid in ls.watch_ids:
                 ls.cancel(wid)
             try:
-                for fut in as_completed(futures):
-                    logger.info(f"Completed command: {fut.result()}")
+                for fut in futures:
+                    logger.info(f"Completed command: {fut.get(timeout=1)}")
             except KeyboardInterrupt:
                 logger.info(f"Interrupting again. Cancelling {len(futures)} submissions...")
-                for fut in futures:
-                    res = fut.cancel()
-                    if not res:
-                        logger.warning("\tCould not cancel a submission...")
+# not available in spawned processes
+#                for fut in futures:
+#                    res = fut.cancel()
+#                    if not res:
+#                        logger.warning("\tCould not cancel a submission...")
+            pool.terminate()
             break
             
         if len(sched0) != lsched0 or len(futures) != lfutures:
