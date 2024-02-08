@@ -6,6 +6,7 @@ from observing import obsstate, classes
 import random
 import os
 import logging
+import getpass
 
 logger = logging.getLogger('observing')
 
@@ -40,16 +41,16 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         beam_num = None
         cal_dir = None
 
-    if pi_id is None:
-        pi_id = random.randint(0, 1000)
-        print(f"No PI ID provided. Setting random PI ID of {pi_id}")
-
     if pi_name is None:
+        pi_name = getpass.getuser()
+
+    if pi_id is None:
         try:
-            pi_name = os.environ["USER"]
+            pi_id = obsstate.check_and_create_pi(pi_name)
+            logger.info(f"No PI ID provided. Getting new ID of {pi_id} for user {pi_name}")
         except:
-            pi_name = "Observer"
-            print("No PI Name provided. Setting the PI Name to Observer")
+            pi_id = random.randint(0, 10000)
+            logger.warn(f"No PI ID provided and could not access obsstate. Setting random PI ID of {pi_id} for user {pi_name}")
 
     if config_file is None:
         print("No configuration file specified. Assuming the standard path.")
@@ -139,6 +140,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
         print(f"Give the integrations time of the observation in milliseconds")
         int_time = int(input())
 
+    assert int_time <= 1024, "Integration time must be less than 1024 ms"
     obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode)
     return obs_text
 
@@ -148,7 +150,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     """ Create preamble info required for a proper SDF
     """
 
-    lines = 'PI_ID            {:02d}\n'.format(pi_id)
+    lines = f'PI_ID            {pi_id}\n'
     lines += f'PI_NAME          {pi_name}\n\n'
     lines += 'PROJECT_ID       0\n'
     lines += f'SESSION_ID       {session_id}\n'

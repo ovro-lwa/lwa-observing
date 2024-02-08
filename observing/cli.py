@@ -35,6 +35,8 @@ def submit_sdf(sdffile, asap, reset):
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
     if reset:
+        ls.put_dict('/mon/observing/schedule', {})
+        ls.put_dict('/mon/observing/submitted', {})
         ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
 
     mode = 'asap' if asap else 'buffer'

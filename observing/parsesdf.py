@@ -123,10 +123,10 @@ def make_obs_list(inp:dict):
             if session.obs_type == ObsType.volt:
                 try:
                     bw = inp['OBSERVATIONS'][i]['OBS_BW']
-                    freq1 = inp['OBSERVATIONS'][i]['OBS_STP_FREQ1[1]']
-                    freq2 = inp['OBSERVATIONS'][i]['OBS_STP_FREQ2[1]']
+                    freq1 = inp['OBSERVATIONS'][i]['OBS_FREQ1']
+                    freq2 = inp['OBSERVATIONS'][i]['OBS_FREQ2']
                 except:
-                    raise Exception('voltage observation requires defining OBS_BW, OBS_STP_FREQ1[1], and OBS_STP_FREQ2[1]')
+                    raise Exception('voltage observation requires defining OBS_BW, OBS_FREQ1], and OBS_FREQ2')
             else:
                 bw, freq1, freq2 = None, None, None
 
@@ -147,8 +147,12 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
 
     start = obs_list[0].obs_start
     ts = start - startbuffer/3600/24  # do the control command  before the start of the first observation
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
 
     # handy name 
     session_mode_name = f"{session.session_id}_{session.obs_type.value}"
@@ -183,8 +187,12 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
 
     start = obs_list[0].obs_start
     ts = start - startbuffer/3600/24  # do the control command  before the start of the first observation
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
 
     # handy name 
     session_mode_name = f"{session.session_id}_{session.obs_type.value}"
@@ -240,8 +248,12 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 
     t0 = obs_list[0].obs_start
     ts = t0 - dt
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
@@ -276,6 +288,10 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         elif obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
+
+    ts += obs.obs_dur/1e3/24/3600
+    cmd = "print('Observation complete')"
+    d.update({ts:cmd})
 
     df = pd.DataFrame(d, index = ['command'])
     df = df.transpose()
@@ -316,14 +332,19 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
     t0 = obs_list[0].obs_start
     ts = t0 - dt
-    cmd = f"con = control.Controller('{session.config_file}')"
+    cmd = f"from mnc import control"
     d = {ts:cmd}
+
+    ts += 0.1/(24*3600)
+    cmd = f"con = control.Controller('{session.config_file}')"
+    d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
     if session.cal_directory is not None and session.do_cal == True:
         # re-assign calibration directory if it is specified
-        cmd = f"con.conf(['xengine']['cal_directory'] = '{session.cal_directory}')"
+        ts += 0.1/(24*3600)
+        cmd = f"con.conf['xengine']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
     # Configure for the beam
@@ -350,6 +371,10 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
         d.update({ts:cmd})
 
+    ts += obs.obs_dur/1e3/24/3600
+    cmd = "print('Observation complete')"
+    d.update({ts:cmd})
+    
     df = pd.DataFrame(d, index = ['command'])
     df = df.transpose()
     df.insert(1, column='session_id',value=session.session_id)
