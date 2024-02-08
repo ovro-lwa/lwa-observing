@@ -85,7 +85,7 @@ def make_obs_list(inp:dict):
         obs_type = inp['SESSION']['SESSION_MODE']
     except KeyError:
         logger.warning("Missing SESSION_MODE keyword, assuming VOLT")
-        obs_type = ObsType.volt
+        obs_type = ObsType.volt.value
     session_id = inp['SESSION']['SESSION_ID']
     config_file = inp['SESSION'].get('CONFIG_FILE', None)
         
