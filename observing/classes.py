@@ -56,7 +56,7 @@ class Session:
         valid_power_beam_nums = range(1,17)
         if self.obs_type is ObsType.power and self.beam_num not in valid_power_beam_nums:
             raise Exception("You must specify a valid beam number if you want to observe with a beam")
-        valid_volt_beam_beams = range(1,2)
+        valid_volt_beam_nums = range(1,2)
         if self.obs_type is ObsType.volt and self.beam_num not in valid_volt_beam_nums:
             raise Exception("You must specify a valid beam number if you want to observe with a beam")
         return
