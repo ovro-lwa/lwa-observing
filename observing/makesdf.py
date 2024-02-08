@@ -135,9 +135,11 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
     if obs_dur is None:
         obs_dur = int(input(f"Give the duration of the observation in milliseconds:"))
 
-    if int_time is None and sess_mode.name in ['POWER', 'VOLT']: 
+    if int_time is None and sess_mode.name == 'POWER': 
         print(f"Give the integrations time of the observation in milliseconds")
         int_time = int(input())
+    if sess_mode.name == 'VOLT':
+        int_time = None
 
     obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode)
     return obs_text
@@ -184,7 +186,8 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += f'OBS_START_MPM   {mpm}\n'
     lines += f"OBS_START       UTC {start_time.replace('-',' ').replace('T',' ')}\n"
     lines += f"OBS_DUR         {int(duration)}\n"
-    lines += f"OBS_INT_TIME    {integration_time}\n"
+    if integration_time != None:
+        lines += f"OBS_INT_TIME    {integration_time}\n"
     lines += f"OBS_DUR+        {duration_lf}\n"
 
     if obs_mode != None:
