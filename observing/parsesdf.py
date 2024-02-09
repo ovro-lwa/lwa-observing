@@ -99,9 +99,16 @@ def make_obs_list(inp:dict):
     for i in inp['OBSERVATIONS']:
         obs_id = int(inp['OBSERVATIONS'][i]['OBS_ID'])
         obs_dur = int(inp['OBSERVATIONS'][i]['OBS_DUR'])
-        oo = inp['OBSERVATIONS'][i]['OBS_START']
-        tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
-        obs_start = Time(tt, format='iso').mjd
+
+        oomjd = inp['OBSERVATIONS'][i].get('OBS_START_MJD', None)
+        oompm = inp['OBSERVATIONS'][i].get('OBS_START_MPM', None)
+        if oomjd is not None and oompm is not None:
+            obs_start = oomjd + oompm*1e-3/3600/24
+        else:
+            oo = inp['OBSERVATIONS'][i]['OBS_START']
+            tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
+            obs_start = Time(tt, format='iso').mjd
+
         # define mode from target. default to that specified
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
 
