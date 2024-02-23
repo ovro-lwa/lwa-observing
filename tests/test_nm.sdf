@@ -1,0 +1,55 @@
+PI_ID            99
+PI_NAME          Dowell, Jayce
+
+PROJECT_ID       COMJD
+PROJECT_TITLE    Commissioning data
+PROJECT_REMPI    None provided
+PROJECT_REMPO    None
+
+SESSION_ID       665
+SESSION_TITLE    3C196 Test
+SESSION_REMPI    ucfuser:eLWA/3C196_test2
+SESSION_REMPO    Requested data return method is UCF;;
+SESSION_DRX_BEAM 1
+
+OBS_ID           1
+OBS_TITLE        drx-1
+OBS_TARGET       3C196
+OBS_REMPI        None provided
+OBS_REMPO        Estimated data volume for this observation is 132.46 GB
+OBS_START_MJD    60348
+OBS_START_MPM    23400000
+OBS_START        UTC 2024/02/08 06:30:00.000000
+OBS_DUR          1800000
+OBS_DUR+         0:30:00.000
+OBS_MODE         TRK_RADEC
+OBS_RA           8.226680556
+OBS_DEC          +48.217388889
+OBS_B            SIMPLE
+OBS_FREQ1        1183307316
+OBS_FREQ1+       53.999999989 MHz
+OBS_FREQ2        1621569285
+OBS_FREQ2+       73.999999990 MHz
+OBS_BW           7
+OBS_BW+          19.600 MHz
+
+OBS_ID           2
+OBS_TITLE        drx-2
+OBS_TARGET       PSR B0823+26
+OBS_REMPI        None provided
+OBS_REMPO        Estimated data volume for this observation is 132.46 GB
+OBS_START_MJD    60348
+OBS_START_MPM    25200000
+OBS_START        UTC 2024/02/08 07:00:00.000000
+OBS_DUR          600000
+OBS_DUR+         0:10:00.000
+OBS_MODE         TRK_RADEC
+OBS_RA           8.447638889
+OBS_DEC          +26.622555556
+OBS_B            SIMPLE
+OBS_FREQ1        1183307316
+OBS_FREQ1+       53.999999989 MHz
+OBS_FREQ2        1621569285
+OBS_FREQ2+       73.999999990 MHz
+OBS_BW           7
+OBS_BW+          19.600 MHz

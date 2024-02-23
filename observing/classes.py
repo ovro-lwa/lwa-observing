@@ -53,8 +53,11 @@ class Session:
         if self.cal_directory is not None:
             assert os.path.exists(self.cal_directory), f"Calibration directory {self.cal_directory} does not exist."
             
-        valid_beam_nums = range(1,17)
-        if (self.obs_type is ObsType.power or self.obs_type is ObsType.volt) and self.beam_num not in valid_beam_nums:
+        valid_power_beam_nums = range(1,17)
+        if self.obs_type is ObsType.power and self.beam_num not in valid_power_beam_nums:
+            raise Exception("You must specify a valid beam number if you want to observe with a beam")
+        valid_volt_beam_nums = range(1,2)
+        if self.obs_type is ObsType.volt and self.beam_num not in valid_volt_beam_nums:
             raise Exception("You must specify a valid beam number if you want to observe with a beam")
         return
 
@@ -70,7 +73,7 @@ class Observation:
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode
     
-    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None):
+    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None, gain=None):
 
         # overload obs_mode for some targets
         if obj_name is not None:
@@ -123,5 +126,6 @@ class Observation:
             self.bw = bw
             self.freq1 = freq1
             self.freq2 = freq2
+            self.gain = gain
 
         return

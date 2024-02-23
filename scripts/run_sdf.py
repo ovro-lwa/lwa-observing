@@ -25,6 +25,7 @@ from mnc.mcs import Client as MCSClient
 from mnc.common import LWATime, NCHAN as NCHAN_NATIVE, CLOCK as CLOCK_NATIVE
 from mnc.xengine_beamformer_control import BeamPointingControl
 
+from observing import schedule as ovro_schedule, parsesdf as ovro_parsesdf
 
 # Beam tracking update control
 #: Time step to use when determining beam pointings
@@ -425,6 +426,10 @@ def main(args):
         logger.warn("Cannot create beamformer control object, will not send beamformer commands")
         bf = None
         
+    # Register
+    ovro_sched = ovro_parsesdf.make_sched(args.filename)
+    ovro_schedule.put_sched(ovro_sched)
+    
     # Recording
     ## Wait for the right time
     logger.info("Waiting for the recording time...")
