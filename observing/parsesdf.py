@@ -81,7 +81,11 @@ def make_obs_list(inp:dict):
     :rtype: Session object, list of Observation objects
 
     """
-    obs_type = inp['SESSION']['SESSION_MODE']
+    try:
+        obs_type = inp['SESSION']['SESSION_MODE']
+    except KeyError:
+        logger.warning("Missing SESSION_MODE keyword, assuming VOLT")
+        obs_type = ObsType.volt.value
     session_id = inp['SESSION']['SESSION_ID']
     config_file = inp['SESSION'].get('CONFIG_FILE', None)
         
@@ -132,12 +136,15 @@ def make_obs_list(inp:dict):
                     bw = inp['OBSERVATIONS'][i]['OBS_BW']
                     freq1 = inp['OBSERVATIONS'][i]['OBS_FREQ1']
                     freq2 = inp['OBSERVATIONS'][i]['OBS_FREQ2']
+                    gain = inp['OBSERVATIONS'][i].get('OBS_DRX_GAIN', None)
                 except:
-                    raise Exception('voltage observation requires defining OBS_BW, OBS_FREQ1], and OBS_FREQ2')
+                    # There is a STEPPED mode that allows a sequence of OBS_STP_* keywords.  That doesn't look
+                    # to be supported currently.
+                    raise Exception('voltage observation requires defining OBS_BW, OBS_FREQ1, and OBS_FREQ2')
             else:
-                bw, freq1, freq2 = None, None, None
+                bw, freq1, freq2, gain = None, None, None, None
 
-            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2)
+            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2, gain=gain)
             
         obs_list.append(obs)
     return session,obs_list
@@ -367,7 +374,12 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
             t0 = obs.obs_start
         elif mode == 'asap':
             t0 = "'now'"
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw})"
+        beam_gain = obs.gain
+        if beam_gain is None or beam_gain == -1:
+            beam_gain = 6
+            logger.warning(f"OBS_DRX_GAIN is not defined, using a value of {beam_gain}")
+            
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw}, gain={beam_gain})"
         d.update({ts:cmd})
 
         ts += (recording_buffer)/24/3600
