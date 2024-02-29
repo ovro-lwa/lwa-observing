@@ -107,7 +107,7 @@ def make_obs_list(inp:dict):
         oomjd = inp['OBSERVATIONS'][i].get('OBS_START_MJD', None)
         oompm = inp['OBSERVATIONS'][i].get('OBS_START_MPM', None)
         if oomjd is not None and oompm is not None:
-            obs_start = oomjd + oompm*1e-3/3600/24
+            obs_start = int(oomjd) + int(oompm)*1e-3/3600/24
         else:
             oo = inp['OBSERVATIONS'][i]['OBS_START']
             tt = f"{oo[1]}-{oo[2]}-{oo[3]} {oo[4]}"
