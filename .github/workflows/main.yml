@@ -74,6 +74,8 @@ jobs:
             "git+https://github.com/realtimeradio/caltech-bifrost-dsp#subdirectory=pipeline-control"
       - name: "Build and Install"
         run: python -m pip install .
+      - name: "Environment Setup"
+        run: sudo mkdir -p /home/pipeline/caltables/latest
       - name: Test
         run: |
           python -m pytest tests
