@@ -62,7 +62,8 @@ jobs:
             python-casacore \
             h5py \
             matplotlib \
-            setuptools_scm
+            setuptools_scm \
+            pytest
           python -m pip install \
             etcd3 \
             "git+https://github.com/dsa110/dsa110-pyutils@v3.8.2" \
