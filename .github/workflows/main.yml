@@ -63,7 +63,8 @@ jobs:
             h5py \
             matplotlib \
             setuptools_scm \
-            pytest
+            pytest \
+            wheel
           python -m pip install \
             etcd3 \
             "git+https://github.com/dsa110/dsa110-pyutils@v3.8.2" \
