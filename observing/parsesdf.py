@@ -1,7 +1,6 @@
 import pandas as pd
 from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
-import sys
 import logging
 
 logger = logging.getLogger('observing')
@@ -27,6 +26,22 @@ def make_sched(sdf_fn, mode='buffer'):
     logger.info(f"Parsed {sdf_fn} into {len(sched)} commands.")
 
     return sched
+
+
+def make_command(mjd, command):
+    """
+    Submit a command to be added to schedule at time mjd.
+    """
+
+    d = {mjd: command}
+    df = pd.DataFrame(d, index = ['command'])
+    df = df.transpose()
+
+    # handy name 
+    session_mode_name = "settings"
+
+    df.insert(1, column='session_mode_name', value=session_mode_name)
+    return df
 
 
 def sdf_to_dict(filename:str):

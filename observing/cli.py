@@ -64,6 +64,20 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur
 
 
 @cli.command()
+@click.argument('mjd')
+@click.argument('sdffile')
+def submit_command(mjd, command):
+    """ Submit a command to be added to schedule at time mjd.
+    Command should be python code that can be evaluated, complete with imports.
+    E.g., "import time; time.sleep(10)" will sleep for 10 seconds.
+    """
+
+    # TODO: sanitize and/or test that command is value when evaluated
+
+    ls.put_dict('/cmd/observing/submitsdf', {'mjd': mjd, 'command': command, 'mode': 'buffer'})
+
+
+@cli.command()
 @click.option('--hard', is_flag=True, default=False, show_default=True)
 def reset_schedule(hard):
     """ Reset schedule.

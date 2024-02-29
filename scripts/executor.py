@@ -44,6 +44,7 @@ if __name__ == "__main__":
                 sched0 = DataFrame([])
                 sched0 = schedule.sched_update(sched0)
             elif 'filename' in event and mode == 'cancel':
+                # option to cancel session
                 filename = event['filename']
                 if os.path.exists(filename):
                     logger.info(f"Cancelling session {filename}")
@@ -55,6 +56,7 @@ if __name__ == "__main__":
                     except Exception as exc:
                         logger.warning("Could not update session status.")
             elif 'filename' in event and mode in ['asap', 'buffer']:
+                # option to submit session with option to execute asap
                 filename = event['filename']
                 if os.path.exists(filename):
                     logger.info(f"Checking session in {filename}")
@@ -75,10 +77,24 @@ if __name__ == "__main__":
                         logger.warning(f"Session {filename} conflicts with existing session.")
                 else:
                     logger.warning(f"File {filename} does not exist.")
+            elif 'filename' not in event and 'command' in event and 'mjd' in event:
+                # option to submit single command
+                command = event['command']
+                mjd = event['mjd']
+                sched = parsesdf.make_command(mjd, command)
+                # get unique session_id and add as columne
+                settings_id = int(max(set(list(sched0.session_id)))) + 1
+                df.insert(1, column='session_id', value=settings_id)
+
+                if not schedule.is_conflicted(sched):
+                    logger.info(f"Adding command {command} at MJD {mjd}")
+                    sched0 = schedule.sched_update([sched0, sched], mode=mode)
+                else:
+                    logger.warning(f"Command {command} conflicts with existing command.")
             else:
                 logger.debug(f"No filename defined.")
         return a
-    ls.add_watch('/cmd/observing/submitsdf', sched_callback())
+    ls.add_watch('/cmd/observing/submitsdf', sched_callback())   # TODO: generalize key name to "submit"?
 
     if len(sys.argv) == 2:
         logger.info(f"Initializing schedule with {sys.argv[1]}")
