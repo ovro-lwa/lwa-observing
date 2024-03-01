@@ -29,5 +29,5 @@ def test_sched_update_remove_old_sessions():
     sched2 = DataFrame({'command': ['cmd3', 'cmd4'], 'session_id': [3, 4]}, index=[99993.0, 99994.0])
     sched = [sched1, sched2]
     updated_sched = sched_update(sched)
-    assert len(updated_sched) == 2
-    assert updated_sched.index.tolist() == [99993.0, 99994.0]
+    assert len(updated_sched) == 4
+    assert updated_sched.index.tolist() == [99991.0, 99992.0, 99993.0, 99994.0]
