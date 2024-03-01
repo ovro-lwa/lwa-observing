@@ -1,5 +1,5 @@
 import pytest
-from observing.obsstate import create_db
+from observing.obsstate import create_db, connection_factory
 
 def test_create_db():
     # Test that the tables are created successfully
