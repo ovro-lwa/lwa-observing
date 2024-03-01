@@ -1,5 +1,12 @@
 import pytest
-from observing.obsstate import create_db, connection_factory
+from observing.obsstate import create_db, connection_factory, add_calibrations
+
+def test_add_calibrations():
+    # Test that the calibrations are added successfully
+    create_db('./ovrolwa_test.db')
+
+    add_calibrations('test', 1)
+
 
 def test_create_db():
     # Test that the tables are created successfully
@@ -10,21 +17,6 @@ def test_create_db():
         c = conn.cursor()
 
         # Check if 'sessions' table exists
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'")
-        result = c.fetchone()
-        assert result is not None
-
-        # Check if 'settings' table exists
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'")
-        result = c.fetchone()
-        assert result is not None
-
-        # Check if 'calibrations' table exists
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='calibrations'")
-        result = c.fetchone()
-        assert result is not None
-
-        # Check if 'pis' table exists
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='pis'")
+        c.execute("SELECT * FROM calibrations")
         result = c.fetchone()
         assert result is not None

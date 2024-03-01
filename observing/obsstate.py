@@ -49,10 +49,10 @@ def connection_factory(path=DBPATH):
     return sqlite3.connect(path)
 
 
-def create_db():
+def create_db(path=DBPATH):
     """Create database if it doesn't exist."""
 
-    with connection_factory() as conn:
+    with connection_factory(path=path) as conn:
         c = conn.cursor()
         c.executescript('''
             CREATE TABLE IF NOT EXISTS sessions
