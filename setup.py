@@ -21,7 +21,7 @@ setup(name='lwa-observing',
           "mnc-python",
           "dsa110-pyutils",
           "uvicorn",
-          "fastapi"
+          "fastapi",
           "protobuf<3.21"
       ],
       zip_safe=False)
