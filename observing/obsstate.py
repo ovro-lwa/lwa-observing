@@ -44,9 +44,9 @@ class PIs(BaseModel):
     PI_NAME: str
 
 
-def connection_factory():
+def connection_factory(path=DBPATH):
     """Create a connection to the database."""
-    return sqlite3.connect(DBPATH)
+    return sqlite3.connect(path)
 
 
 def create_db():

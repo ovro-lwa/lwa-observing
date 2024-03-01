@@ -6,7 +6,7 @@ def test_create_db():
     create_db()
 
     # Check if the tables exist in the database
-    with connection_factory() as conn:
+    with connection_factory('./ovrolwa_test.db') as conn:
         c = conn.cursor()
 
         # Check if 'sessions' table exists
