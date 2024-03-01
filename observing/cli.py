@@ -69,10 +69,9 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur
 def submit_command(mjd, command):
     """ Submit a command to be added to schedule at time mjd.
     Command should be python code that can be evaluated, complete with imports.
-    E.g., "import time; time.sleep(10)" will sleep for 10 seconds.
+    E.g., "from mnc import settings; settings.update()" to update settings.
+    Currently command is required to include "settings.update".
     """
-
-    # TODO: sanitize and/or test that command is value when evaluated
 
     ls.put_dict('/cmd/observing/submitsdf', {'mjd': mjd, 'command': command, 'mode': 'buffer'})
 

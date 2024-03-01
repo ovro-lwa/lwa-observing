@@ -33,6 +33,10 @@ def make_command(mjd, command):
     Submit a command to be added to schedule at time mjd.
     """
 
+    if "settings.update" not in command:
+        print("Command must be a settings update. Taking no action.")
+        return None
+
     d = {mjd: command}
     df = pd.DataFrame(d, index = ['command'])
     df = df.transpose()
@@ -41,6 +45,8 @@ def make_command(mjd, command):
     session_mode_name = "settings"
 
     df.insert(1, column='session_mode_name', value=session_mode_name)
+    # session_id column added in executor.py to ensure uniqueness
+
     return df
 
 

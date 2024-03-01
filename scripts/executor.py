@@ -82,15 +82,21 @@ if __name__ == "__main__":
                 command = event['command']
                 mjd = event['mjd']
                 sched = parsesdf.make_command(mjd, command)
-                # get unique session_id and add as columne
-                settings_id = int(max(set(list(sched0.session_id)))) + 1
-                df.insert(1, column='session_id', value=settings_id)
-
-                if not schedule.is_conflicted(sched):
-                    logger.info(f"Adding command {command} at MJD {mjd}")
-                    sched0 = schedule.sched_update([sched0, sched], mode=mode)
+                if sched is None:
+                    logger.warning(f"Command ({command}) not allowed.")
                 else:
-                    logger.warning(f"Command {command} conflicts with existing command.")
+                    # get arbitrary unique session_id and add as column (to avoid submitting multiple commands at once)
+                    if len(sched0):
+                        settings_id = int(max(set(list(sched0.session_id)))) + 1
+                    else:
+                        settings_id = 1
+                    sched.insert(1, column='session_id', value=settings_id)
+
+                    if not schedule.is_conflicted(sched):
+                        logger.info(f"Adding command {command} at MJD {mjd}")
+                        sched0 = schedule.sched_update([sched0, sched], mode=mode)
+                    else:
+                        logger.warning(f"Command {command} conflicts with existing command.")
             else:
                 logger.debug(f"No filename defined.")
         return a
