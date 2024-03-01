@@ -1,5 +1,6 @@
 import pytest
 from observing.obsstate import create_db, connection_factory, add_calibrations
+from astropy.time import Time
 
 
 def test_create_db():
