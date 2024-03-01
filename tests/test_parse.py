@@ -1,6 +1,9 @@
 import pytest
 import os.path
 from observing import parsesdf
+import pandas as pd
+from observing.parsesdf import make_command
+
 
 _install_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -28,3 +31,22 @@ def test_make_nm():
     d = parsesdf.sdf_to_dict(fn)
     session, obs_list = parsesdf.make_obs_list(d)
     df = parsesdf.volt_beam_obs(obs_list, session)
+
+def test_make_command():
+    mjd = 2459597.5
+    command = "settings.update"
+    expected_df = pd.DataFrame({mjd: [command]}, index=['command']).transpose()
+    expected_df.insert(1, column='session_mode_name', value='settings')
+
+    result_df = make_command(mjd, command)
+
+    assert result_df.equals(expected_df)
+
+def test_make_command_invalid():
+    mjd = 2459597.5
+    command = "invalid.command"
+    expected_df = None
+
+    result_df = make_command(mjd, command)
+
+    assert result_df == expected_df

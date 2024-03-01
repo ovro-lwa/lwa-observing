@@ -126,11 +126,3 @@ def stop_dr(recorder):
 
     con = control.Controller(recorders=recorder)
     con.stop_dr(recorder)
-
-
-@cli.command()
-def run_calibration():
-    """ Run calibration pipeline to generate solutions in pipeline/caltables/latest directory
-    """
-
-    pass
