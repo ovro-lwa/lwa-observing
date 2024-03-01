@@ -10,7 +10,7 @@ def test_create_db():
     now = Time.now().mjd
     with connection_factory('./ovrolwa_test.db') as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (float(now), str(filename), str(beam)))
+        c.execute("INSERT INTO calibrations (time_loaded, filename, beam) VALUES (?, ?, ?)", (float(now), 'test', '1'))
 
 
     # Check if the tables exist in the database
