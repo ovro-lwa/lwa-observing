@@ -94,6 +94,24 @@ def is_conflicted(sched):
     return False
 
 
+def _mjd_range_to_status(mjd_range, tnow=None):
+    if tnow is None:
+        tnow = time.Time.now().mjd
+        
+    status = 'queued'
+    if tnow >= mjd_range[0] and tnow <= mjd_range[1]:
+        status = 'active'
+    elif tnow >= mjd_range[1]:
+        status = 'completed'
+    return status
+
+
+def _mjd_range_to_duration(mjd_range):
+    dur_s = (mjd_range[1] - mjd_range[0]) * 86400
+    dur = time.TimeDelta(dur_s, format='sec')
+    return str(dur.datetime)
+
+
 def print_sched(mode=None):
     """ Gets schedule from etcd and prints it
     """
@@ -109,7 +127,14 @@ def print_sched(mode=None):
             for kk, vv in dd.items():
                 logger.info(f"\tMode {kk}:")
                 for kk2,vv2 in vv.items():
-                    logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
+                    tt2 = [time.Time(v, format='mjd') for v in vv2]
+                    ss2 = _mjd_range_to_status(vv2, tnow=mjd)
+                    pp2 = _mjd_range_to_duration(vv2)
+                    logger.info(f"\tSession: {kk2}. Start, Stop: {vv2[0]}, {vv2[1]}")
+                    logger.info(f"\t{' '*(23+len(kk2))} {tt2[0].iso}, {tt2[1].iso} UTC")
+                    logger.info(f"\t{' '*(10+len(kk2))} Duration: {pp2}")
+                    logger.info(f"\t{' '*(10+len(kk2))} Status: {ss2}")
+                    
                 logger.info('\n')
         logger.info('\n')
         if len(dd2):
@@ -117,7 +142,7 @@ def print_sched(mode=None):
            for kk, vv in dd2.items():
                 logger.info(f"\tMode {kk}:")
                 for kk2,vv2 in vv.items():
-                    logger.info(f"\t\tSession: {kk2}. Start, Stop: {vv2}")
+                    logger.info(f"\t\tSession: {kk2}. Start, Stop: {vv2[0]}, {vv2[1]}")
                 logger.info('\n')
         logger.info('\n')
     else:
@@ -126,14 +151,20 @@ def print_sched(mode=None):
         else:
             logger.info(f"Schedule for mode {mode} (at MJD={mjd})")
             for kk2,vv2 in dd[mode].items():
-                logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
+                tt2 = [time.Time(v, format='mjd') for v in vv2]
+                ss2 = _mjd_range_to_status(vv2, tnow=mjd)
+                pp2 = _mjd_range_to_duration(vv2)
+                logger.info(f"\tSession: {kk2}. Start, Stop: {vv2[0]}, {vv2[1]}")
+                logger.info(f"\t{' '*(23+len(kk2))} {tt2[0].iso}, {tt2[1].iso} UTC")
+                logger.info(f"\t{' '*(10+len(kk2))} Duration: {pp2}")
+                logger.info(f"\t{' '*(10+len(kk2))} Status: {ss2}")
             logger.info('\n')
 
         if mode not in dd2:
             logger.info(f"Mode {mode} not in submitted history.")
         else:
             for kk2,vv2 in dd2[mode].items():
-                logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
+                logger.info(f"\tSession: {kk2}. Start, Stop: {vv2[0]}, {vv2[1]}")
 
 
 def sched_update(sched, mode='buffer'):
@@ -214,4 +245,3 @@ def runrow(rows):
         obsstate.update_session(int(row['session_id']), 'completed')
     except Exception as exc:
         logger.warning("Could not update session status.")
-
