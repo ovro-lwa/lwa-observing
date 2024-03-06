@@ -4,9 +4,15 @@ from astropy.time import Time
 from pydantic import BaseModel
 import sqlite3
 from observing import parsesdf
+from slack_sdk import WebClient
 import logging
 
 logger = logging.getLogger(__name__)
+if "SLACK_TOKEN_LWA" in environ:
+    cl = WebClient(token=environ["SLACK_TOKEN_LWA"])
+else:
+    cl = None
+    logging.warning("No SLACK_TOKEN_LWA found. No slack updates.")
 
 # TODO: figure out how to make it r/w for all users
 DBPATH = '/opt/devel/pipeline/ovrolwa.db'
@@ -141,6 +147,11 @@ def add_session(sdffile: str):
                    session.SESSION_MODE, session.SESSION_DRX_BEAM, session.CONFIG_FILE, session.CAL_DIR,
                    session.STATUS))
 
+    if cl is not None:
+        response = cl.chat_postMessage(channel="#observing",
+                                       text=f"Session {session.SESSION_ID} submitted for {session.PI_NAME} for mode {session.SESSION_MODE}",
+                                       icon_emoji = ":robot_face::")
+
 
 def add_settings(filename: str):
     """Add settings to the database.
@@ -159,6 +170,11 @@ def add_settings(filename: str):
         c = conn.cursor()
         c.execute("INSERT INTO settings VALUES (?, ?, ?)",
                   (time_loaded, str(user), os.path.basename(filename)))
+
+    if cl is not None:
+        response = cl.chat_postMessage(channel="#observing",
+                                       text=f"Settings updated by {user} with file {filename}",
+                                       icon_emoji = ":robot_face::")
 
 
 def add_calibrations(filename, beam):
