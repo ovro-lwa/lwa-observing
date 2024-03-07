@@ -64,8 +64,8 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur
 
 
 @cli.command()
-@click.argument('mjd')
-@click.argument('sdffile')
+@click.argument('mjd', type=float)
+@click.argument('command', type=str)
 def submit_command(mjd, command):
     """ Submit a command to be added to schedule at time mjd.
     Command should be python code that can be evaluated, complete with imports.
