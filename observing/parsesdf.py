@@ -1,7 +1,6 @@
 import pandas as pd
 from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
-import sys
 import logging
 
 logger = logging.getLogger('observing')
@@ -27,6 +26,22 @@ def make_sched(sdf_fn, mode='buffer'):
     logger.info(f"Parsed {sdf_fn} into {len(sched)} commands.")
 
     return sched
+
+
+def make_command(mjd, command):
+    """
+    Submit a command to be added to schedule at time mjd.
+    """
+
+    if "settings.update" not in command:
+        print("Command must be a settings update. Taking no action.")
+        return None
+
+    d = {mjd: command}
+    df = pd.DataFrame(d, index = ['command'])
+    df = df.transpose()
+
+    return df
 
 
 def sdf_to_dict(filename:str):
