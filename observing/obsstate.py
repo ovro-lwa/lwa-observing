@@ -8,8 +8,8 @@ from slack_sdk import WebClient
 import logging
 
 logger = logging.getLogger(__name__)
-if "SLACK_TOKEN_LWA" in environ:
-    cl = WebClient(token=environ["SLACK_TOKEN_LWA"])
+if "SLACK_TOKEN_LWA" in os.environ:
+    cl = WebClient(token=os.environ["SLACK_TOKEN_LWA"])
 else:
     cl = None
     logging.warning("No SLACK_TOKEN_LWA found. No slack updates.")
