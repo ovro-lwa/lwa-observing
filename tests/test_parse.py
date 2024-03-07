@@ -36,7 +36,6 @@ def test_make_command():
     mjd = 2459597.5
     command = "settings.update"
     expected_df = pd.DataFrame({mjd: [command]}, index=['command']).transpose()
-    expected_df.insert(1, column='session_mode_name', value='settings')
 
     result_df = make_command(mjd, command)
 
