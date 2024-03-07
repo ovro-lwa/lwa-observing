@@ -41,12 +41,6 @@ def make_command(mjd, command):
     df = pd.DataFrame(d, index = ['command'])
     df = df.transpose()
 
-    # handy name 
-    session_mode_name = "settings"
-
-    df.insert(1, column='session_mode_name', value=session_mode_name)
-    # session_id column added in executor.py to ensure uniqueness
-
     return df
 
 

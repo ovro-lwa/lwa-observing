@@ -81,6 +81,8 @@ if __name__ == "__main__":
                 # option to submit single command
                 command = event['command']
                 mjd = event['mjd']
+                mode = event['mode']
+
                 sched = parsesdf.make_command(mjd, command)
                 if sched is None:
                     logger.warning(f"Command ({command}) not allowed.")
@@ -90,7 +92,11 @@ if __name__ == "__main__":
                         settings_id = int(max(set(list(sched0.session_id)))) + 1
                     else:
                         settings_id = 1
+
+                    # handy name 
                     sched.insert(1, column='session_id', value=settings_id)
+                    session_mode_name = f"{settings_id}_settings"
+                    sched.insert(1, column='session_mode_name', value=session_mode_name)
 
                     if not schedule.is_conflicted(sched):
                         logger.info(f"Adding command {command} at MJD {mjd}")
