@@ -44,12 +44,12 @@
         };
     </script>
     <script>
-        function sortsettingsTable(n) {
+        function sortcalibrationsTable(n) {
             var table, rows, switching, i, x, y, shouldSwitch;
             table = document.getElementById("CalibrationsTable");
             // Make dir a property of the function to preserve its value between function calls
-            if (typeof sortsettingsTable.dir == 'undefined' ) {
-                sortsettingsTable.dir = "desc";
+            if (typeof sortcalibrationsTable.dir == 'undefined' ) {
+                sortcalibrationsTable.dir = "desc";
             }
             do {
                 switching = false;
@@ -58,12 +58,12 @@
                     shouldSwitch = false;
                     x = rows[i].getElementsByTagName("TD")[n];
                     y = rows[i + 1].getElementsByTagName("TD")[n];
-                    if (sortsettingsTable.dir == "asc") {
+                    if (sortcalibrationsTable.dir == "asc") {
                         if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
                         }
-                    } else if (sortsettingsTable.dir == "desc") {
+                    } else if (sortcalibrationsTable.dir == "desc") {
                         if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
                             shouldSwitch = true;
                             break;
@@ -76,7 +76,7 @@
                 }
             } while (switching);
             // Toggle the direction only after the sorting is complete
-            sortsettingsTable.dir = sortsettingsTable.dir == "asc" ? "desc" : "asc";
+            sortcalibrationsTable.dir = sortcalibrationsTable.dir == "asc" ? "desc" : "asc";
         }
     </script>
 </head>
