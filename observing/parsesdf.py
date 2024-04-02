@@ -393,8 +393,13 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         if beam_gain is None or beam_gain == -1:
             beam_gain = 6
             logger.warning(f"OBS_DRX_GAIN is not defined, using a value of {beam_gain}")
+        if beam_gain > 15:
+            beam_gain1 = (beam_gain >> 8) & 0xFF
+            beam_gain2 = beam_gain & 0xFF
+        else:
+            beam_gain1 = beam_gain2 = beam_gain
             
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw}, gain1={beam_gain}, gain2={beam_gain})"
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw}, gain1={beam_gain1}, gain2={beam_gain2})"
         d.update({ts:cmd})
 
         ts += (recording_buffer)/24/3600
