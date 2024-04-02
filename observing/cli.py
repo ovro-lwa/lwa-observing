@@ -34,6 +34,11 @@ def submit_sdf(sdffile, asap, reset):
         print(f"Not a full path. Assuming {sdffile}...")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
+    try:
+        sched = parsesdf.make_sched(sdffile)
+    except:
+        raise RuntimeError(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
+
     if reset:
         ls.put_dict('/mon/observing/schedule', {})
         ls.put_dict('/mon/observing/submitted', {})
