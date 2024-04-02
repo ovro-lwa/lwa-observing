@@ -125,6 +125,8 @@ def add_session(sdffile: str):
     assert os.path.exists(sdffile), f"{sdffile} does not exist"
     dd = parsesdf.sdf_to_dict(sdffile)
     now = Time.now().mjd
+    if 'CAL_DIR' not in dd['SESSION']:
+        dd['SESSION']['CAL_DIR'] = ''
 
     # convert lists to comma-separated strings
     for key, value in dd['SESSION'].items():
