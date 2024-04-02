@@ -72,6 +72,10 @@ if __name__ == "__main__":
                             logger.warning("Could not add session to obsstate.")
 
                         sched0 = schedule.sched_update([sched0, sched], mode=mode)
+
+                        # make function to parse and add dictionary there, keyed by session_id
+                        schedule.put_dict(filename)
+
                     else:
                         # should probably log this better or return to cli user
                         logger.warning(f"Session {filename} conflicts with existing session.")
