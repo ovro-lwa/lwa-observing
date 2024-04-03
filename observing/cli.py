@@ -1,7 +1,7 @@
 import os.path
 import click
 from dsautils import dsa_store
-from observing import schedule, makesdf
+from observing import schedule, makesdf, parsesdf
 from mnc import control
 import sys
 import logging

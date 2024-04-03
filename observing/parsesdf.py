@@ -256,7 +256,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 360
+        cal_buffer = 480
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
@@ -340,7 +340,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     if mode == 'buffer':
         controller_buffer = 20
         configure_buffer = 20
-        cal_buffer = 360
+        cal_buffer = 480
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
