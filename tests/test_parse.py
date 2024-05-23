@@ -49,3 +49,47 @@ def test_make_command_invalid():
     result_df = make_command(mjd, command)
 
     assert result_df == expected_df
+
+def test_make_command_script():
+    fn = os.path.join(_install_dir, 'test.sdf')
+    obs_ra = []
+    with open(fn, 'r') as fh:
+        for line in fh:
+            if line.startswith('OBS_RA'):
+                fields = line.split()
+                obs_ra.append(float(fields[1]))
+                
+    d = parsesdf.sdf_to_dict(fn)
+    session, obs_list = parsesdf.make_obs_list(d)
+    df = parsesdf.power_beam_obs(obs_list, session)
+    
+    for c in df['command']:
+        if c.startswith('con.control_bf'):
+            if c.find('coord') != -1:
+                _, radec = c.split('coord', 1)
+                ra, dec, _ = radec.split(',', 2)
+                ra = ra.split('(', 1)[-1]
+                dec = dec.split(')', 1)[0]
+                assert float(ra) == obs_ra.pop(0)
+
+def test_make_command_script_nm():
+    fn = os.path.join(_install_dir, 'test_nm.sdf')
+    obs_ra = []
+    with open(fn, 'r') as fh:
+        for line in fh:
+            if line.startswith('OBS_RA'):
+                fields = line.split()
+                obs_ra.append(float(fields[1]))
+                
+    d = parsesdf.sdf_to_dict(fn)
+    session, obs_list = parsesdf.make_obs_list(d)
+    df = parsesdf.volt_beam_obs(obs_list, session)
+    
+    for c in df['command']:
+        if c.startswith('con.control_bf'):
+            if c.find('coord') != -1:
+                _, radec = c.split('coord', 1)
+                ra, dec, _ = radec.split(',', 2)
+                ra = ra.split('(', 1)[-1]
+                dec = dec.split(')', 1)[0]
+                assert float(ra) == obs_ra.pop(0)
