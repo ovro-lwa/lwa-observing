@@ -1,7 +1,6 @@
 import pandas as pd
 from observing.classes import ObsType, Session, Observation
 from astropy.time import Time
-import sys
 import logging
 
 logger = logging.getLogger('observing')
@@ -27,6 +26,22 @@ def make_sched(sdf_fn, mode='buffer'):
     logger.info(f"Parsed {sdf_fn} into {len(sched)} commands.")
 
     return sched
+
+
+def make_command(mjd, command):
+    """
+    Submit a command to be added to schedule at time mjd.
+    """
+
+    if "settings.update" not in command:
+        print("Command must be a settings update. Taking no action.")
+        return None
+
+    d = {mjd: command}
+    df = pd.DataFrame(d, index = ['command'])
+    df = df.transpose()
+
+    return df
 
 
 def sdf_to_dict(filename:str):
@@ -133,10 +148,12 @@ def make_obs_list(inp:dict):
 
             if session.obs_type == ObsType.volt:
                 try:
-                    bw = inp['OBSERVATIONS'][i]['OBS_BW']
-                    freq1 = inp['OBSERVATIONS'][i]['OBS_FREQ1']
-                    freq2 = inp['OBSERVATIONS'][i]['OBS_FREQ2']
+                    bw = int(inp['OBSERVATIONS'][i]['OBS_BW'])
+                    freq1 = int(inp['OBSERVATIONS'][i]['OBS_FREQ1'])
+                    freq2 = int(inp['OBSERVATIONS'][i]['OBS_FREQ2'])
                     gain = inp['OBSERVATIONS'][i].get('OBS_DRX_GAIN', None)
+                    if gain is not None:
+                        gain = int(gain)
                 except:
                     # There is a STEPPED mode that allows a sequence of OBS_STP_* keywords.  That doesn't look
                     # to be supported currently.
@@ -378,8 +395,13 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         if beam_gain is None or beam_gain == -1:
             beam_gain = 6
             logger.warning(f"OBS_DRX_GAIN is not defined, using a value of {beam_gain}")
+        if beam_gain > 15:
+            beam_gain1 = (beam_gain >> 8) & 0xFF
+            beam_gain2 = beam_gain & 0xFF
+        else:
+            beam_gain1 = beam_gain2 = beam_gain
             
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}, teng_f2={obs.freq2}, f0={obs.bw}, gain={beam_gain})"
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, gain1={beam_gain1}, gain2={beam_gain2})"
         d.update({ts:cmd})
 
         ts += (recording_buffer)/24/3600

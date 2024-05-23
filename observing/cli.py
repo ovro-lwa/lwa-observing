@@ -34,6 +34,11 @@ def submit_sdf(sdffile, asap, reset):
         print(f"Not a full path. Assuming {sdffile}...")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
+    try:
+        sched = parsesdf.make_sched(sdffile)
+    except:
+        raise RuntimeError(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
+
     if reset:
         ls.put_dict('/mon/observing/schedule', {})
         ls.put_dict('/mon/observing/submitted', {})
@@ -61,6 +66,19 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur
 
     makesdf.create(sdffile, n_obs=n_obs, sess_mode=sess_mode, obs_mode=obs_mode, beam_num=beam_num, obs_start=obs_start,
                    obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time)
+
+
+@cli.command()
+@click.argument('mjd', type=float)
+@click.argument('command', type=str)
+def submit_command(mjd, command):
+    """ Submit a command to be added to schedule at time mjd.
+    Command should be python code that can be evaluated, complete with imports.
+    E.g., "from mnc import settings; settings.update()" to update settings with latest file.
+    Currently command is required to include "settings.update".
+    """
+
+    ls.put_dict('/cmd/observing/submitsdf', {'mjd': mjd, 'command': command, 'mode': 'buffer'})
 
 
 @cli.command()
@@ -113,11 +131,3 @@ def stop_dr(recorder):
 
     con = control.Controller(recorders=recorder)
     con.stop_dr(recorder)
-
-
-@cli.command()
-def run_calibration():
-    """ Run calibration pipeline to generate solutions in pipeline/caltables/latest directory
-    """
-
-    pass

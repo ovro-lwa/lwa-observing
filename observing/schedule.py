@@ -3,7 +3,7 @@ from pandas import concat, DataFrame
 from astropy import time
 import logging
 from dsautils import dsa_store
-from observing import obsstate
+from observing import obsstate, parsesdf
 
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
@@ -40,6 +40,22 @@ def put_sched(sched=None):
     ls.put_dict('/mon/observing/schedule', sched_dict)
 
 
+def put_dict(filename):
+    """ Parses SDF and puts dict in etcd for later retrieval by data recorders
+    """
+
+    dd = parsesdf.sdf_to_dict(filename)
+    session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
+    if 'SESSION_DRX_BEAM' in dd['SESSION']:
+        session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
+
+    dd0 = ls.get_dict('/mon/observing/sdfdict')
+    if dd0 is None:
+        dd0 = {}
+    dd0.update({session_mode_name: dd})
+    ls.put_dict('/mon/observing/sdfdict', dd0)
+
+                
 def put_submitted(rows):
     """ Takes submitted rows and sets values in etcd
     """

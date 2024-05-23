@@ -21,6 +21,8 @@ setup(name='lwa-observing',
           "mnc-python",
           "dsa110-pyutils",
           "uvicorn",
-          "fastapi"
+          "fastapi",
+          "slack_sdk",
+          "protobuf<3.21"
       ],
       zip_safe=False)

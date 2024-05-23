@@ -93,14 +93,12 @@
                 <th onclick="sortsettingsTable(0)">Time Loaded</th>
                 <th onclick="sortsettingsTable(1)">User</th>
                 <th onclick="sortsettingsTable(2)">Filename</th>
-                <th onclick="sortsettingsTable(3)">Time in File</th>
             </tr>
             {% for setting in settings %}
             <tr>
                 <td>{{ setting.time_loaded }}</td>
                 <td>{{ setting.user }}</td>
                 <td>{{ setting.filename }}</td>
-                <td>{{ setting.time_file }}</td>
             </tr>
             {% endfor %}
         </table>
