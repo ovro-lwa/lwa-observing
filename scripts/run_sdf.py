@@ -149,6 +149,11 @@ def _get_sdf_id(filename):
     return pid, sid
 
 
+def _freq_to_freq(freq):
+    tuning_word = int(numpy.float32(freq)/196e6*2**32)
+    return tuning_word / 2**32 * 196e6
+
+
 def parse_sdf(filename):
     """
     Given an SDF filename, parse the file and return a list of
@@ -488,7 +493,7 @@ def main(args):
                     dr.send_command(f"drt{obs[0]['beam']}", 'drx',
                                     beam=obs[0]['beam'],
                                     tuning=1,
-                                    central_freq=o['freq1'],
+                                    central_freq=_freq_to_freq(o['freq1']),
                                     filter=o['filter'],
                                     gain=o['gain1'])
                 last_freq1 = o['freq1']
@@ -502,7 +507,7 @@ def main(args):
                     dr.send_command(f"drt{obs[0]['beam']}", 'drx',
                                     beam=obs[0]['beam'],
                                     tuning=2,
-                                    central_freq=o['freq2'],
+                                    central_freq=_freq_to_freq(o['freq2']),
                                     filter=o['filter'],
                                     gain=o['gain2'])
                 last_freq2 = o['freq2']
