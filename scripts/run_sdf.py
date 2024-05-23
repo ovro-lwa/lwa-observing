@@ -8,6 +8,8 @@ import shutil
 import argparse
 import subprocess
 
+from slack_sdk import WebClient
+
 import logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s [%(levelname)-7s] %(message)s',
@@ -26,6 +28,13 @@ from mnc.common import LWATime, NCHAN as NCHAN_NATIVE, CLOCK as CLOCK_NATIVE
 from mnc.xengine_beamformer_control import BeamPointingControl
 
 from observing import schedule as ovro_schedule, parsesdf as ovro_parsesdf
+
+# Slack setup
+if "SLACK_TOKEN_LWA" in os.environ:
+    cl = WebClient(token=os.environ["SLACK_TOKEN_LWA"])
+else:
+    cl = None
+
 
 # Beam tracking update control
 #: Time step to use when determining beam pointings
@@ -127,6 +136,26 @@ def _get_tracking_updates(obs):
         
     # Done
     return steps
+
+
+def _get_sdf_observer(filename):
+    pi_id = None
+    pi_name = None
+    with open(filename, 'r') as fh:
+        for line in fh:
+            line = line.strip().rstrip()
+            if len(line) < 3:
+                continue
+            if line[0] == '#':
+                continue
+                
+            fields = line.split(None, 1)
+            if fields[0] == 'PI_ID':
+                pi_id = fields[1].split('#')[0].strip().rstrip()
+            elif fields[0] == 'PI_NAME':
+                pi_name = fields[1].split('#')[0].strip().rstrip()
+                
+    return pi_id, pi_name
 
 
 def _get_sdf_id(filename):
@@ -376,6 +405,7 @@ def main(args):
     logger.setLevel(logging.DEBUG)
     
     # Setup another log handler that writes to a file as a crude form of metadata
+    pi_id, pi_name = _get_sdf_observer(args.filename)
     obs_pid, obs_sid = _get_sdf_id(args.filename)
     metadata_name = "%s_%04i.history" % (obs_pid, obs_sid)
     metadata_handler = logging.FileHandler(metadata_name, mode='w')
@@ -434,6 +464,10 @@ def main(args):
     # Register
     ovro_sched = ovro_parsesdf.make_sched(args.filename)
     ovro_schedule.put_sched(ovro_sched)
+    if cl is not None:
+        response = cl.chat_postMessage(channel="#observing",
+                                       text=f"{obs_pid} Session {obs_sid} submitted for {pi_name} using {os.path.basename(__file__)}",
+                                       icon_emoji = ":robot_face::")
     
     # Recording
     ## Wait for the right time
