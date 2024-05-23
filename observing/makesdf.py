@@ -197,7 +197,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
         lines += f"OBS_MODE        {obs_mode.value}\n"
 
     if ra is not None:
-        lines += f"OBS_RA          %.9f\n" % (ra)
+        lines += f"OBS_RA          %.9f\n" % (ra / 15)  # OBS_RA is in hours not degrees
     if dec is not None:
         lines += f"OBS_DEC         %+.9f\n" % (dec)
 

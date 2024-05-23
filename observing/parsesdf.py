@@ -140,6 +140,8 @@ def make_obs_list(inp:dict):
             
         if session.obs_type == ObsType.power or session.obs_type == ObsType.volt:
             ra = inp['OBSERVATIONS'][i].get('OBS_RA', None)
+            if ra is not None:
+                ra = ra * 15    # hours -> degrees
             dec = inp['OBSERVATIONS'][i].get('OBS_DEC', None)
             int_time = inp['OBSERVATIONS'][i].get('OBS_INT_TIME', None)
             obj_name = inp['OBSERVATIONS'][i].get('OBS_TARGET', None)
