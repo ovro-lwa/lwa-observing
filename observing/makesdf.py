@@ -170,6 +170,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
 
 def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_name = None, integration_time = 1, obs_mode = None):
     """ Create an observation block for the SDF
+    Note that RA for the function is in degrees, but the SDF standard uses hours (converted internally).
     """
 
     t = Time(start_time, format = 'isot')
@@ -197,7 +198,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
         lines += f"OBS_MODE        {obs_mode.value}\n"
 
     if ra is not None:
-        lines += f"OBS_RA          %.9f\n" % (ra / 15)  # OBS_RA is in hours not degrees
+        lines += f"OBS_RA          %.9f\n" % (ra / 15)  # SDF standard defines OBS_RA is in hours not degrees
     if dec is not None:
         lines += f"OBS_DEC         %+.9f\n" % (dec)
 
