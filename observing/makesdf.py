@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from astropy.time import Time
+from astropy import coordinates
 from datetime import timedelta
 from observing import obsstate, classes
 import random
@@ -68,8 +69,8 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
     sdf_text += obs_text
 
     # after first, all others will prompt for input
-    for obs_count in range(1, n_obs):
-        obs_text = make_oneobs(obs_count, sess_mode=sess_mode)
+    for obs_count in range(2, n_obs+1):
+        obs_text = make_oneobs(obs_count, sess_mode=sess_mode, obs_mode=obs_mode, obs_dur=obs_dur, int_time=int_time)
         sdf_text += obs_text
         print(obs_text)
         print("Add another observation? (Y/N)")
@@ -107,17 +108,22 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
         obs_mode = classes.EphemModes(obs_mode)
 
     if sess_mode.value in ['POWER', 'VOLT']:
-        if ra is None and dec is None and obj_name is None:
-            coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
-            try:
-                objectspl = coords.split(',')
-                if len(objectspl) == 2:
-                    ra = float(ra)
-                    dec = float(dec)
-                elif len(objectspl) == 1:
-                    obj_name = objectspl[0]
-            except:
-                raise ValueError("Couldn't parse coords")
+        if ra is None or dec is None:
+            if obj_name is not None and isinstance(obj_name, str):
+                co = coordinates.SkyCoord.from_name(obj_name)
+                ra = co.ra.deg
+                dec = co.dec.deg
+            else:
+                coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
+                try:
+                    objectspl = coords.split(',')
+                    if len(objectspl) == 2:
+                        ra = float(ra)
+                        dec = float(dec)
+                    elif len(objectspl) == 1:
+                        obj_name = objectspl[0]
+                except:
+                    raise ValueError("Couldn't parse coords")
 
     if obs_start is None:
         obs_start = input(f"Give the start time of the observation in isot format or as astropy.Time object")
