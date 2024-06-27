@@ -109,8 +109,11 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
     if sess_mode.value in ['POWER', 'VOLT']:
         if ra is None or dec is None:
-            if obj_name is not None and isinstance(obj_name, str):
-                co = coordinates.SkyCoord.from_name(obj_name)
+            if obj_name is not None and isinstance(obj_name, str) and obs_mode.value == 'TRK_RADEC':
+                try:
+                    co = coordinates.SkyCoord.from_name(obj_name)
+                except:
+                    raise ValueError("Couldn't get coordinates for object name")
                 ra = co.ra.deg
                 dec = co.dec.deg
             else:
