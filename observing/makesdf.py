@@ -106,6 +106,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
         dec = 0.
     elif obs_mode in ['STEPPED', 'AZALT']:
         logger.info("Using provided (RA, Dec) as (Az, Alt) for this obs_mode.")
+        obs_mode = classes.EphemModes(obs_mode)
         az = ra
         alt = dec
         ra = None
