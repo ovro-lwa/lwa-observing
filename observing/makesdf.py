@@ -114,19 +114,19 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
                     co = coordinates.SkyCoord.from_name(obj_name)
                 except:
                     raise ValueError("Couldn't get coordinates for object name")
+        if ra is None and dec is None and obj_name is None:
+            coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
+            try:
+                objectspl = coords.split(',')
+                if len(objectspl) == 2:
+                    ra = float(ra)
+                    dec = float(dec)
+                elif len(objectspl) == 1:
+                    obj_name = objectspl[0]
+            except:
+                raise ValueError("Couldn't parse coords")
                 ra = co.ra.deg
                 dec = co.dec.deg
-            else:
-                coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
-                try:
-                    objectspl = coords.split(',')
-                    if len(objectspl) == 2:
-                        ra = float(ra)
-                        dec = float(dec)
-                    elif len(objectspl) == 1:
-                        obj_name = objectspl[0]
-                except:
-                    raise ValueError("Couldn't parse coords")
 
     if obs_start is None:
         obs_start = input(f"Give the start time of the observation in isot format or as astropy.Time object")
