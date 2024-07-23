@@ -147,8 +147,8 @@ def make_obs_list(inp:dict):
             alt = inp['OBSERVATIONS'][i].get('OBS_STP_C2[1]', None)
             int_time = inp['OBSERVATIONS'][i].get('OBS_INT_TIME', None)
             obj_name = inp['OBSERVATIONS'][i].get('OBS_TARGET', None)
-            if obj_name is None and ra is None and dec is None:
-                logger.warning("OBS_TARGET or OBS_RA/DEC must be defined")
+            if obj_name is None and ra is None and dec is None and az is None and alt is None:
+                logger.warning("OBS_TARGET or direction must be defined")
 
             if session.obs_type == ObsType.volt:
                 try:
