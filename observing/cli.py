@@ -56,8 +56,8 @@ def submit_sdf(sdffile, asap, reset):
 @click.option('--obs-mode', default='TRK_RADEC', type=str, help='Observation mode (e.g. TRK_RADEC, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
 @click.option('--obs-start', default=None, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
 @click.option('--obs-dur', default=None, type=int, help='Observation duration in milliseconds')
-@click.option('--ra', default=None, type=float, help='RA of object to track (in hours)')
-@click.option('--dec', default=None, type=float, help='Dec of object to track (in degrees)')
+@click.option('--ra', default=None, type=float, help='RA of targetk (in hours). Interpreted as Azimuth for AZALT obs-mode.')
+@click.option('--dec', default=None, type=float, help='Dec of target (in degrees). Interpreted as Azimuth for AZALT obs-mode.')
 @click.option('--obj-name', default=None, type=str, help='Name of object to track (used as alternative to RA/Dec)')
 @click.option('--int-time', default=None, type=int, help='Integration time in milliseconds')
 def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):

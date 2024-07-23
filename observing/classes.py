@@ -12,6 +12,8 @@ class EphemModes(Enum):
     trk_sol = 'TRK_SOL'
     trk_lun = 'TRK_LUN'
     trk_radec = 'TRK_RADEC'
+    azalt = "AZALT"
+    stepped = "STEPPED"
 
 class Session:
     """
@@ -73,7 +75,7 @@ class Observation:
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode
     
-    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None, gain=None):
+    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None, gain=None, az=None, alt=None):
 
         # overload obs_mode for some targets
         if obj_name is not None:
@@ -108,7 +110,11 @@ class Observation:
                 self.ra = float(ra)
                 self.dec = float(dec)
                 self.obj_name = obj_name
-
+        elif self.obs_mode in ['STEPPED', 'AZALT']:
+            self.az = float(az)
+            self.alt = float(alt)
+            self.ra = None
+            self.dec = None
         else:
             self.ra = None
             self.dec = None
