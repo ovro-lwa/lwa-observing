@@ -106,9 +106,13 @@ class Observation:
                 self.obj_name = obj_name
                 self.ra = None
                 self.dec = None
+                self.az = None
+                self.alt = None
             elif dec is not None:
                 self.ra = float(ra)
                 self.dec = float(dec)
+                self.az = None
+                self.alt = None
                 self.obj_name = obj_name
         elif self.obs_mode in ['STEPPED', 'AZALT']:
             self.az = float(az)
@@ -118,6 +122,8 @@ class Observation:
         else:
             self.ra = None
             self.dec = None
+            self.az = None
+            self.alt = None
             self.obj_name = obj_name
 
         # Set integration time of the beam. If none, the default is 1ms:            
