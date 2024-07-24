@@ -143,16 +143,31 @@ def make_obs_list(inp:dict):
             if ra is not None:
                 ra = float(ra) * 15    # hours -> degrees
             dec = inp['OBSERVATIONS'][i].get('OBS_DEC', None)
+            az = inp['OBSERVATIONS'][i].get('OBS_STP_C1[1]', None)
+            alt = inp['OBSERVATIONS'][i].get('OBS_STP_C2[1]', None)
             int_time = inp['OBSERVATIONS'][i].get('OBS_INT_TIME', None)
             obj_name = inp['OBSERVATIONS'][i].get('OBS_TARGET', None)
-            if obj_name is None and ra is None and dec is None:
-                logger.warning("OBS_TARGET or OBS_RA/DEC must be defined")
+            if obj_name is None and ra is None and dec is None and az is None and alt is None:
+                logger.warning("OBS_TARGET or direction must be defined")
 
             if session.obs_type == ObsType.volt:
                 try:
-                    bw = int(inp['OBSERVATIONS'][i]['OBS_BW'])
-                    freq1 = int(inp['OBSERVATIONS'][i]['OBS_FREQ1'])
-                    freq2 = int(inp['OBSERVATIONS'][i]['OBS_FREQ2'])
+                    bw = inp['OBSERVATIONS'][i].get('OBS_BW', None)
+                    if bw is not None:
+                        bw = int(bw)
+
+                    freq1 = inp['OBSERVATIONS'][i].get('OBS_FREQ1', None)
+                    if freq1 is None:
+                        freq1 = inp['OBSERVATIONS'][i].get('OBS_STP_FREQ1[1]', None)
+                    if freq1 is not None:
+                        freq1 = int(freq1)
+
+                    freq2 = inp['OBSERVATIONS'][i].get('OBS_FREQ2', None)
+                    if freq2 is None:
+                        freq2 = inp['OBSERVATIONS'][i].get('OBS_STP_FREQ2[1]', None)
+                    if freq2 is not None:
+                        freq2 = int(freq2)
+
                     gain = inp['OBSERVATIONS'][i].get('OBS_DRX_GAIN', None)
                     if gain is not None:
                         gain = int(gain)
@@ -163,7 +178,7 @@ def make_obs_list(inp:dict):
             else:
                 bw, freq1, freq2, gain = None, None, None, None
 
-            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2, gain=gain)
+            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2, gain=gain, az=az, alt=alt)
             
         obs_list.append(obs)
     return session,obs_list
@@ -315,11 +330,14 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         d.update({ts:cmd})
 
         ts += recording_buffer/24/3600
-        if obs.dec is None:
+        if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
             targetname = obs.obj_name
             cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
-        elif obs.dec is not None:
+        elif obs.ra is not None and obs.dec is not None:
             cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+        elif obs.az is not None and obs.alt is not None:
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.az},{obs.alt}), coordtype='azel', track=False, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+            
         d.update({ts:cmd})
 
     ts += obs.obs_dur/1e3/24/3600
@@ -407,11 +425,14 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         d.update({ts:cmd})
 
         ts += (recording_buffer)/24/3600
-        if obs.dec is None:
+        if obs.ra is None and obs.dec is None:
             targetname = obs.obj_name
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
-        elif obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration = {(obs.obs_dur+pointing_buffer)/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+        elif obs.ra is not None and obs.dec is not None:
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+        elif obs.az is not None and obs.alt is not None:
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.az},{obs.alt}), coordtype='azel', track=False, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+
         d.update({ts:cmd})
 
     ts += obs.obs_dur/1e3/24/3600

@@ -85,7 +85,7 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
 
 
 
-def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None, obj_name=None, int_time=None):
+def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None, obj_name=None, int_time=None, az=None, alt=None):
     """ Create string for one observation
     """
 
@@ -104,15 +104,25 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
             obj_name = 'Jupiter'
         ra = 0.
         dec = 0.
+    elif obs_mode in ['STEPPED', 'AZALT']:
+        logger.info("Using provided (RA, Dec) as (Az, Alt) for this obs_mode.")
+        obs_mode = classes.EphemModes(obs_mode)
+        az = ra
+        alt = dec
+        ra = None
+        dec = None
     else:
         obs_mode = classes.EphemModes(obs_mode)
 
     if sess_mode.value in ['POWER', 'VOLT']:
-        if ra is None or dec is None:
+        if (ra is None or dec is None) and az is None and alt is None:
             if obj_name is not None and isinstance(obj_name, str):
-                co = coordinates.SkyCoord.from_name(obj_name)
-                ra = co.ra.deg
-                dec = co.dec.deg
+                try:
+                    co = coordinates.SkyCoord.from_name(obj_name)
+                    ra = co.ra.deg
+                    dec = co.dec.deg
+                except:
+                    logger.warn(f"Could not parse {obj_name}. Not seting (RA, Dec) from that.")
             else:
                 coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
                 try:
@@ -150,7 +160,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
     if int_time is not None:
         assert int_time <= 1024, "Integration time must be less than 1024 ms"
-    obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode)
+    obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode, az=az, alt=alt)
     return obs_text
 
 
@@ -174,7 +184,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     return lines
 
 
-def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_name = None, integration_time = 1, obs_mode = None):
+def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_name = None, integration_time = 1, obs_mode = None, az = None, alt = None):
     """ Create an observation block for the SDF
     Note that RA for the function is in degrees, but the SDF standard uses hours (converted internally).
     """
@@ -207,6 +217,11 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
         lines += f"OBS_RA          %.9f\n" % (ra / 15)  # SDF standard defines OBS_RA is in hours not degrees
     if dec is not None:
         lines += f"OBS_DEC         %+.9f\n" % (dec)
+
+    if az is not None:
+        lines += f"OBS_STP_C1[1]   {az}\n"
+    if alt is not None:
+        lines += f"OBS_STP_C2[1]   {alt}\n"
 
     lines += "OBS_FREQ1       1161394218\n"
     lines += "OBS_FREQ1+      53.000000009 MHz\n"
