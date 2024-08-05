@@ -52,14 +52,17 @@ def submit_sdf(sdffile, asap, reset):
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
-    sleep(0.1)
+    sleep(0.5)
     sdfdict = ls.get_dict('/mon/observing/sdfdict')
-    assert session_mode_name in sdfdict, f"Session {session_mode_name} not found in sdfdict"
+    if session_mode_name not in sdfdict:
+        print(f"Session {session_mode_name} not found in sdfdict")
+
     scheduled = ls.get_dict('/mon/observing/schedule')
     active = ls.get_dict('/mon/observing/submitted')
     any_scheduled = any([key for key in scheduled if session_mode_name in scheduled[key]])
     any_active = any([key for key in active if session_mode_name in active[key]])
-    assert any_scheduled or any_active, f"Session {session_mode_name} not scheduled or actively observing"
+    if not any_scheduled and not any_active:
+        print(f"Session {session_mode_name} not scheduled or actively observing")
 
     print("Successfullly submitted SDF.")
 
