@@ -35,12 +35,17 @@ def submit_sdf(sdffile, asap, reset):
         print(f"Not a full path. Assuming {sdffile}...")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
+
+    # try parsing SDF
     try:
-        sched = parsesdf.make_sched(sdffile)
         dd = parsesdf.sdf_to_dict(sdffile)
         session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
         if 'SESSION_DRX_BEAM' in dd['SESSION']:
             session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
+
+        sched = parsesdf.make_sched(sdffile)
+        if schedule.is_conflicted(sched):
+            raise RuntimeError(f"Warning: SDF {sdffile} is conflicted with current schedule")
     except:
         raise RuntimeError(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
 
@@ -52,10 +57,11 @@ def submit_sdf(sdffile, asap, reset):
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
+    # wait, then see if it got parsed and scheduled
     sleep(0.5)
     sdfdict = ls.get_dict('/mon/observing/sdfdict')
     if session_mode_name not in sdfdict:
-        print(f"Session {session_mode_name} not found in sdfdict")
+        print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name}")
 
     scheduled = ls.get_dict('/mon/observing/schedule')
     active = ls.get_dict('/mon/observing/submitted')
@@ -63,8 +69,8 @@ def submit_sdf(sdffile, asap, reset):
     any_active = any([key for key in active if session_mode_name in active[key]])
     if not any_scheduled and not any_active:
         print(f"Session {session_mode_name} not scheduled or actively observing")
-
-    print("Successfullly submitted SDF.")
+    else:
+        print("Successfullly submitted SDF to schedule.")
 
 @cli.command()
 @click.argument('sdffile')
