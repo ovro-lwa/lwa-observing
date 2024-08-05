@@ -45,9 +45,11 @@ def submit_sdf(sdffile, asap, reset):
 
         sched = parsesdf.make_sched(sdffile)
         if schedule.is_conflicted(sched):
-            raise RuntimeError(f"Warning: SDF {sdffile} is conflicted with current schedule")
+            print(f"Warning: SDF {sdffile} is conflicted with current schedule")
+            return
     except:
-        raise RuntimeError(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
+        print(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
+        return
 
     if reset:
         ls.put_dict('/mon/observing/schedule', {})
@@ -62,6 +64,7 @@ def submit_sdf(sdffile, asap, reset):
     sdfdict = ls.get_dict('/mon/observing/sdfdict')
     if session_mode_name not in sdfdict:
         print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name}")
+        return
 
     scheduled = ls.get_dict('/mon/observing/schedule')
     active = ls.get_dict('/mon/observing/submitted')
