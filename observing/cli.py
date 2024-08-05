@@ -42,6 +42,8 @@ def submit_sdf(sdffile, asap, reset):
         session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
         if 'SESSION_DRX_BEAM' in dd['SESSION']:
             session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
+        if session_mode name in ls.get_dict('/mon/observing/sdfdict'):
+            print(f"Warning: SDF {sdffile} was parsed by scheduler before. Was this SDF already submitted?")
 
         sched = parsesdf.make_sched(sdffile)
         if schedule.is_conflicted(sched) and not asap:
@@ -63,7 +65,7 @@ def submit_sdf(sdffile, asap, reset):
     sleep(0.5)
     sdfdict = ls.get_dict('/mon/observing/sdfdict')
     if session_mode_name not in sdfdict:
-        print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name}")
+        print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name})")
         return
 
     scheduled = ls.get_dict('/mon/observing/schedule')
