@@ -44,7 +44,7 @@ def submit_sdf(sdffile, asap, reset):
             session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
 
         sched = parsesdf.make_sched(sdffile)
-        if schedule.is_conflicted(sched):
+        if schedule.is_conflicted(sched) and not asap:
             print(f"Warning: SDF {sdffile} is conflicted with current schedule")
             return
     except:
