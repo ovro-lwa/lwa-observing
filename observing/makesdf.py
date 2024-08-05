@@ -104,7 +104,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
             obj_name = 'Jupiter'
         ra = 0.
         dec = 0.
-    elif obs_mode in ['STEPPED', 'AZALT']:
+    elif obs_mode in ['AZALT']:
         logger.info("Using provided (RA, Dec) as (Az, Alt) for this obs_mode.")
         obs_mode = classes.EphemModes(obs_mode)
         az = ra
@@ -219,9 +219,9 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
         lines += f"OBS_DEC         %+.9f\n" % (dec)
 
     if az is not None:
-        lines += f"OBS_STP_C1[1]   {az}\n"
+        lines += f"OBS_AZ          {az}\n"
     if alt is not None:
-        lines += f"OBS_STP_C2[1]   {alt}\n"
+        lines += f"OBS_ALT         {alt}\n"
 
     lines += "OBS_FREQ1       1161394218\n"
     lines += "OBS_FREQ1+      53.000000009 MHz\n"

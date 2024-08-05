@@ -13,7 +13,6 @@ class EphemModes(Enum):
     trk_lun = 'TRK_LUN'
     trk_radec = 'TRK_RADEC'
     azalt = "AZALT"
-    stepped = "STEPPED"
 
 class Session:
     """
@@ -99,7 +98,7 @@ class Observation:
         # Setting ra and dec values if the system isn't using one of the modes that require ephemerides: 
         ephem_modes = tracking_modes[1:]
         
-        if self.obs_mode not in ephem_modes+['STEPPED', 'AZALT']:
+        if self.obs_mode not in ephem_modes+['AZALT']:
             # If the dec is None, then assume that the user wants to resolve to a target based on its name
             if dec is None and self.obs_mode:
                 assert(obj_name is not None)
@@ -114,7 +113,7 @@ class Observation:
                 self.az = None
                 self.alt = None
                 self.obj_name = obj_name
-        elif self.obs_mode in ['STEPPED', 'AZALT']:
+        elif self.obs_mode in ['AZALT']:
             self.az = float(az)
             self.alt = float(alt)
             self.ra = None

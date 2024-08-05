@@ -143,8 +143,8 @@ def make_obs_list(inp:dict):
             if ra is not None:
                 ra = float(ra) * 15    # hours -> degrees
             dec = inp['OBSERVATIONS'][i].get('OBS_DEC', None)
-            az = inp['OBSERVATIONS'][i].get('OBS_STP_C1[1]', None)
-            alt = inp['OBSERVATIONS'][i].get('OBS_STP_C2[1]', None)
+            az = inp['OBSERVATIONS'][i].get('OBS_AZ', None)
+            alt = inp['OBSERVATIONS'][i].get('OBS_ALT', None)
             int_time = inp['OBSERVATIONS'][i].get('OBS_INT_TIME', None)
             obj_name = inp['OBSERVATIONS'][i].get('OBS_TARGET', None)
             if obj_name is None and ra is None and dec is None and az is None and alt is None:
@@ -157,14 +157,10 @@ def make_obs_list(inp:dict):
                         bw = int(bw)
 
                     freq1 = inp['OBSERVATIONS'][i].get('OBS_FREQ1', None)
-                    if freq1 is None:
-                        freq1 = inp['OBSERVATIONS'][i].get('OBS_STP_FREQ1[1]', None)
                     if freq1 is not None:
                         freq1 = int(freq1)
 
                     freq2 = inp['OBSERVATIONS'][i].get('OBS_FREQ2', None)
-                    if freq2 is None:
-                        freq2 = inp['OBSERVATIONS'][i].get('OBS_STP_FREQ2[1]', None)
                     if freq2 is not None:
                         freq2 = int(freq2)
 
