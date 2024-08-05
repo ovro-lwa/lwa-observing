@@ -168,8 +168,7 @@ def make_obs_list(inp:dict):
                     if gain is not None:
                         gain = int(gain)
                 except:
-                    # There is a STEPPED mode that allows a sequence of OBS_STP_* keywords.  That doesn't look
-                    # to be supported currently.
+                    # Not yet supporting STEPPED mode (OBS_STP_* keywords)
                     raise Exception('voltage observation requires defining OBS_BW, OBS_FREQ1, and OBS_FREQ2')
             else:
                 bw, freq1, freq2, gain = None, None, None, None

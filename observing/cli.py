@@ -1,5 +1,6 @@
 import os.path
 import click
+from time import sleep
 from dsautils import dsa_store
 from observing import schedule, makesdf, parsesdf
 from mnc import control
@@ -36,6 +37,10 @@ def submit_sdf(sdffile, asap, reset):
     assert os.path.exists(sdffile), f"File {sdffile} not found"
     try:
         sched = parsesdf.make_sched(sdffile)
+        dd = parsesdf.sdf_to_dict(sdffile)
+        session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
+        if 'SESSION_DRX_BEAM' in dd['SESSION']:
+            session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
     except:
         raise RuntimeError(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
 
@@ -47,6 +52,16 @@ def submit_sdf(sdffile, asap, reset):
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
+    sleep(0.1)
+    sdfdict = ls.get_dict('/mon/observing/sdfdict')
+    assert session_mode_name in sdfdict, f"Session {session_mode_name} not found in sdfdict"
+    scheduled = ls.get_dict('/mon/observing/schedule')
+    active = ls.get_dict('/mon/observing/submitted')
+    any_scheduled = any([key for key in scheduled if session_mode_name in scheduled[key]])
+    any_active = any([key for key in active if session_mode_name in active[key]])
+    assert any_scheduled or any_active, f"Session {session_mode_name} not scheduled or actively observing"
+
+    print("Successfullly submitted SDF.")
 
 @cli.command()
 @click.argument('sdffile')
