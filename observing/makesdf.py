@@ -124,12 +124,12 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
                 except:
                     logger.warn(f"Could not parse {obj_name}. Not seting (RA, Dec) from that.")
             else:
-                coords = input("Give target as RA DEC, in degrees (comma delimited) or a single object name (no commas):")
+                coords = input("Give target as RA DEC ('[deg], [deg]') or a single object name (no commas):")
                 try:
                     objectspl = coords.split(',')
                     if len(objectspl) == 2:
-                        ra = float(ra)
-                        dec = float(dec)
+                        ra = float(objectspl[0])
+                        dec = float(objectspl[1])
                     elif len(objectspl) == 1:
                         obj_name = objectspl[0]
                 except:
