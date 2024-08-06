@@ -1,5 +1,6 @@
 import os.path
 import click
+from time import sleep
 from dsautils import dsa_store
 from observing import schedule, makesdf, parsesdf
 from mnc import control
@@ -34,10 +35,23 @@ def submit_sdf(sdffile, asap, reset):
         print(f"Not a full path. Assuming {sdffile}...")
 
     assert os.path.exists(sdffile), f"File {sdffile} not found"
+
+    # try parsing SDF
     try:
+        dd = parsesdf.sdf_to_dict(sdffile)
+        session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
+        if 'SESSION_DRX_BEAM' in dd['SESSION']:
+            session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
+        if session_mode_name in ls.get_dict('/mon/observing/sdfdict'):
+            print(f"Warning: SDF {sdffile} was parsed by scheduler before. Was this SDF already submitted?")
+
         sched = parsesdf.make_sched(sdffile)
+        if schedule.is_conflicted(sched) and not asap:
+            print(f"Warning: SDF {sdffile} is conflicted with current schedule")
+            return
     except:
-        raise RuntimeError(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
+        print(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
+        return
 
     if reset:
         ls.put_dict('/mon/observing/schedule', {})
@@ -47,6 +61,21 @@ def submit_sdf(sdffile, asap, reset):
     mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
+    # wait, then see if it got parsed and scheduled
+    sleep(0.5)
+    sdfdict = ls.get_dict('/mon/observing/sdfdict')
+    if session_mode_name not in sdfdict:
+        print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name})")
+        return
+
+    scheduled = ls.get_dict('/mon/observing/schedule')
+    active = ls.get_dict('/mon/observing/submitted')
+    any_scheduled = any([key for key in scheduled if session_mode_name in scheduled[key]])
+    any_active = any([key for key in active if session_mode_name in active[key]])
+    if not any_scheduled and not any_active:
+        print(f"Session {session_mode_name} not scheduled or actively observing")
+    else:
+        print("Successfullly submitted SDF to schedule.")
 
 @cli.command()
 @click.argument('sdffile')
