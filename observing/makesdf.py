@@ -93,7 +93,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
     if obs_mode is None:
         if sess_mode.value in ['POWER', 'VOLT']:
             obs_mode = classes.EphemModes('TRK_RADEC')
-            logger.info("no obs_mode provided, assuming TRK_RADEC")
+            logger.warn("no obs_mode provided, assuming TRK_RADEC")
     elif obs_mode in ['TRK_JOV', 'TRK_SOL', 'TRK_LUN']:
         obs_mode = classes.EphemModes(obs_mode)
         if 'SOL' in obs_mode.value:
