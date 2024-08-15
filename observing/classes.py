@@ -18,7 +18,7 @@ class Session:
     """
     Contains information about the controller settings for the session 
     """
-    def __init__(self, obs_type, session_id, config_file = None, cal_directory = None, do_cal = True,beam_num = None):
+    def __init__(self, obs_type, session_id, config_file = None, cal_directory = None, do_cal = False, beam_num = None):
         """
         
         :param obs_type: defines whether the session will be for a power beam, voltage beam, or slow/fast vis
