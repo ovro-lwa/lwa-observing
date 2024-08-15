@@ -79,17 +79,22 @@ def submit_sdf(sdffile, asap, reset):
 
 @cli.command()
 @click.argument('sdffile')
-@click.option('--n-obs', default=1, type=int, help='Number of observations to create. Each obs may only have different target/ra/dec/time.')
+@click.option('--n-obs', default=1, type=int,
+              help='Number of observations to create. Each obs may only have different target/ra/dec/time.')
 @click.option('--sess-mode', default='POWER', type=str, help='Session mode (FAST, SLOW, POWER, VOLT)')
 @click.option('--beam-num', default=None, type=int, help='POWER/VOLT beam number')
-@click.option('--obs-mode', default='TRK_RADEC', type=str, help='Observation mode (e.g. TRK_RADEC, AZALT, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
+@click.option('--cal-dir', default='/home/pipeline/caltables/latest', type=str,
+              help='Calibration directory with tables to apply if not already calibrated.')
+@click.option('--do-cal', is_flag=True, default=False, show_default=True, help='Force the application of calibration')
+@click.option('--obs-mode', default='TRK_RADEC', type=str,
+              help='Observation mode (e.g. TRK_RADEC, AZALT, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
 @click.option('--obs-start', default=None, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
 @click.option('--obs-dur', default=None, type=int, help='Observation duration in milliseconds')
 @click.option('--ra', default=None, type=float, help='RA of target (in hours). Interpreted as Azimuth for AZALT obs-mode.')
 @click.option('--dec', default=None, type=float, help='Dec of target (in degrees). Interpreted as Azimuth for AZALT obs-mode.')
 @click.option('--obj-name', default=None, type=str, help='Name of object to track (used as alternative to RA/Dec)')
 @click.option('--int-time', default=None, type=int, help='Integration time in milliseconds')
-def create_sdf(sdffile, n_obs, sess_mode, beam_num, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
+def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
     """ Create an SDF file.
     """
 

@@ -12,9 +12,9 @@ import getpass
 logger = logging.getLogger('observing')
 
 
-def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home/pipeline/caltables/latest', pi_id=None,
-           pi_name=None, config_file=None, n_obs=1, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None,
-           obj_name=None, int_time=None):
+def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home/pipeline/caltables/latest', do_cal=False,
+           pi_id=None, pi_name=None, config_file=None, n_obs=1, obs_mode=None, obs_start=None, obs_dur=None, ra=None,
+           dec=None, obj_name=None, int_time=None):
     """ Create a file out_name as an SDF
     """
 
@@ -38,9 +38,12 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
             beam_num = int(inp)
         if cal_dir is not None:
             assert os.path.exists(cal_dir), f"cal_dir ({cal_dir}) does not exist"
+        if do_cal:
+            assert os.path.exists(cal_dir), f"Cannot use do_cal if cal_dir ({cal_dir}) does not exist"
     else:
         beam_num = None
         cal_dir = None
+        do_cal = False
 
     if pi_name is None:
         pi_name = getpass.getuser()
@@ -58,7 +61,7 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         config_file = "/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml"
 
     try:
-        session_preamble = make_session_preamble(sess_id, sess_mode, pi_id, pi_name, beam_num, config_file, cal_dir)
+        session_preamble = make_session_preamble(sess_id, sess_mode, pi_id, pi_name, beam_num, config_file, cal_dir, do_cal)
         sdf_text += session_preamble
         print(session_preamble)
     except:
@@ -165,7 +168,8 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
 
 def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Observer', beam_num = None,
-                          config_dir = '/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_calim_config.yaml', cal_dir = None):
+                          config_dir = '/home/pipeline/proj/lwa-shell/mnc_python/config/lwa_calim_config.yaml', cal_dir = None,
+                          do_cal = False):
     """ Create preamble info required for a proper SDF
     """
 
@@ -179,6 +183,7 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     lines += f'CONFIG_FILE      {config_dir}\n'
     if cal_dir != None:
         lines += f'CAL_DIR          {cal_dir}\n'
+    lines += f'DO_CAL           {do_cal}\n'
     lines += '\n'
 
     return lines
