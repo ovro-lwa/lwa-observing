@@ -276,6 +276,8 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 0.1
         recording_buffer = 0.1
 
+    calibratebeams = session.cal_directory is not None
+
     if calibratebeams or session.do_cal:
         logger.debug("Scheduling for calibration time...")
         dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
@@ -311,7 +313,6 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     # Configure for the beam
     ts += controller_buffer/24/3600
     # always calibrate uncalibrated beams if dir provided. Give user option to apply even if already calibrated.
-    calibratebeams = session.cal_directory is not None
     cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {calibratebeams}, force={session.do_cal})"
     d.update({ts:cmd})
 
@@ -393,6 +394,8 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
+    calibratebeams = session.cal_directory is not None
+
     if calibratebeams or session.do_cal == True:
         # re-assign calibration directory if it is specified
         ts += 0.1/(24*3600)

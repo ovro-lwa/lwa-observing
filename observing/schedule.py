@@ -40,8 +40,9 @@ def put_sched(sched=None):
     ls.put_dict('/mon/observing/schedule', sched_dict)
 
 
-def put_dict(filename):
+def put_dict(filename, limit=10):
     """ Parses SDF and puts dict in etcd for later retrieval by data recorders
+    limit defines the number of sessions in a given mode-beam that should be retained in sdfdict.
     """
 
     dd = parsesdf.sdf_to_dict(filename)
@@ -50,6 +51,25 @@ def put_dict(filename):
         session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
 
     dd0 = ls.get_dict('/mon/observing/sdfdict')
+
+    # clear out old entries
+    mode_set = set([key.split('_')[1] for key in dd0])  # all unique modes used
+    sortid = sorted(dd0.keys(), reverse=True, key=lambda x: int(x.split('_')[0]))  # sort by session_id
+    keep = []
+    limit = 10
+    for mode in mode_set:
+        i = 0
+        for Id in sortid:
+            if mode in Id:
+                i+=1
+                keep.append(Id)
+                if i > limit:
+                    break
+    if len(dd0) < len(keep):
+        logger.info(f'sdfdict reduced from {len(dd0)} to {len(keep)}.')
+        
+    dd0 = {k:v for k, v in dd0.items() if k in keep}
+    
     if dd0 is None:
         dd0 = {}
     dd0.update({session_mode_name: dd})

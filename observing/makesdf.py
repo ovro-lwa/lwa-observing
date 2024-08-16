@@ -205,8 +205,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
         duration_lf = '0' + duration_lf
 
     lines =  f'OBS_ID          {obs_id}\n'
-    if obj_name != None:
-        lines += f'OBS_TARGET      {obj_name}\n'
+    lines += f'OBS_TARGET      {obj_name}\n'
     lines += f'OBS_START_MJD   {mjd_start}\n'
     lines += f'OBS_START_MPM   {mpm}\n'
     lines += f"OBS_START       UTC {start_time.replace('-',' ').replace('T',' ')}\n"
@@ -233,7 +232,7 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
     lines += "OBS_FREQ2       1599656187\n"
     lines += "OBS_FREQ2+      73.000000010 MHz\n"
     lines += "OBS_BW          7\n"
-    lines += "OBS_BW+         19.600 MHz\n\n"
+    lines += "OBS_BW+         19.600 MHz\n"
     lines += "OBS_DRX_GAIN    6\n"
 
     return lines

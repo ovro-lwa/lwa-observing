@@ -62,7 +62,7 @@ def submit_sdf(sdffile, asap, reset):
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
 
     # wait, then see if it got parsed and scheduled
-    sleep(0.5)
+    sleep(1)
     sdfdict = ls.get_dict('/mon/observing/sdfdict')
     if session_mode_name not in sdfdict:
         print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name})")
@@ -99,7 +99,7 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, o
     """
 
     makesdf.create(sdffile, n_obs=n_obs, sess_mode=sess_mode, obs_mode=obs_mode, beam_num=beam_num, obs_start=obs_start,
-                   obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time)
+                   obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time, do_cal=do_cal, cal_dir=cal_dir)
 
 
 @cli.command()
