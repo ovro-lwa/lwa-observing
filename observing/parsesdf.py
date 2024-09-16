@@ -276,7 +276,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 0.1
         recording_buffer = 0.1
 
-    calibratebeams = session.cal_directory is not None
+    calibratebeams = session.cal_directory is not None and session.do_cal
 
     if calibratebeams or session.do_cal:
         logger.debug("Scheduling for calibration time...")
@@ -302,7 +302,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
-    calibratebeams = session.cal_directory is not None
+    calibratebeams = session.cal_directory is not None and session.do_cal
 
     if calibratebeams or session.do_cal:
         # re-assign calibration directory if it is specified
@@ -368,7 +368,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 0.1
         recording_buffer = 0.1
 
-    calibratebeams = session.cal_directory is not None
+    calibratebeams = session.cal_directory is not None and session.do_cal
 
     if calibratebeams or session.do_cal:
         dt = (configure_buffer + cal_buffer + controller_buffer + pointing_buffer + recording_buffer)/3600/24
@@ -394,7 +394,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
         
-    calibratebeams = session.cal_directory is not None
+    calibratebeams = session.cal_directory is not None and session.do_cal
 
     if calibratebeams or session.do_cal == True:
         # re-assign calibration directory if it is specified
