@@ -103,13 +103,14 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, o
 
 
 @cli.command()
-@click.argument('mjd', type=float)
 @click.argument('command', type=str)
+@click.option('--mjd', type=float, default=None)
 def submit_command(mjd, command):
     """ Submit a command to be added to schedule at time mjd.
     Command should be python code that can be evaluated, complete with imports.
     E.g., "from mnc import settings; settings.update()" to update settings with latest file.
     Currently command is required to include "settings.update".
+    Default time is 'now'.
     """
 
     ls.put_dict('/cmd/observing/submitsdf', {'mjd': mjd, 'command': command, 'mode': 'buffer'})
