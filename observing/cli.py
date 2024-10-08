@@ -146,8 +146,8 @@ def show_schedule(mode):
 
 
 @cli.command()
-@click.option('--recorder', default='drvs', help='Name of a recorder (drvs, drvf, dr1, drt1, ...)')
-@click.option('--duration', default=None, help='Duration of recording in ms. Default for drvs is to leave it on. Beamformers need duration set.')
+@click.option('--recorder', type=str, default='drvs', help='Name of a recorder (drvs, drvf, dr1, drt1, ...)')
+@click.option('--duration', type=float, default=None, help='Duration of recording in ms. Default for drvs is to leave it on. Beamformers need duration set.')
 def start_dr(recorder, duration):
     """ Start data recorder directly now (no SDF)
     Currently only supports starting recorder now.
