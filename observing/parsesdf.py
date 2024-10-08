@@ -36,9 +36,6 @@ def make_command(mjd, command):
     # we are expecting:
     # from mnc import settings; settings.udpate()
     # from mnc import control; con = control.Controller(); con.configure_xengine(full=full)
-
-    if mjd is None:
-        mjd = Time.now().mjd + 1/(24*3600) # tiny bit of lead time
     
     if ("settings.update" not in command) and ("configure_xengine" not in command):
         print("Commands including 'settings.update' and 'configure_xengine' currently supported.")

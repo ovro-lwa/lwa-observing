@@ -6,6 +6,7 @@ from observing import schedule, makesdf, parsesdf
 from mnc import control
 import sys
 import logging
+from astropy.time import Time
 
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
@@ -105,7 +106,7 @@ def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, o
 @cli.command()
 @click.argument('command', type=str)
 @click.option('--mjd', type=float, default=None)
-def submit_command(mjd, command):
+def submit_command(command, mjd):
     """ Submit a command to be added to schedule at time mjd.
     Command should be python code that can be evaluated, complete with imports.
     E.g., "from mnc import settings; settings.update()" to update settings with latest file.
@@ -113,6 +114,9 @@ def submit_command(mjd, command):
     Default time is 'now'.
     """
 
+    if mjd is None:
+        mjd = Time.now().mjd + 1/(24*3600)  # give it a little delay
+    
     ls.put_dict('/cmd/observing/submitsdf', {'mjd': mjd, 'command': command, 'mode': 'buffer'})
 
 
