@@ -44,6 +44,7 @@ def make_command(mjd, command):
         print("Commands including 'settings.update' and 'configure_xengine' currently supported.")
         return None
 
+    assert isinstance(mjd, float)
     
     d = {mjd: command}
     df = pd.DataFrame(d, index = ['command'])
