@@ -93,7 +93,7 @@ if __name__ == "__main__":
                 else:
                     # get arbitrary unique session_id and add as column (to avoid submitting multiple commands at once)
                     if len(sched0):
-                        settings_id = int(max(set(list(sched0.session_id)))) + 1
+                        settings_id = int(max(set(list(sched0.session_id)))) + 1  # "settings" is a misnomer since this can include x-engine restart too
                     else:
                         settings_id = 1
 
