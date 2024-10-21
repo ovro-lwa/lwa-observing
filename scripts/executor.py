@@ -98,7 +98,7 @@ if __name__ == "__main__":
                         settings_id = 1
 
                     # handy name 
-                    sched.insert(1, column='session_id', value=settings_id)
+                    sched.insert(1, column='session_id', value=int(settings_id))
                     session_mode_name = f"{settings_id}_settings"
                     sched.insert(1, column='session_mode_name', value=session_mode_name)
 
