@@ -112,7 +112,7 @@ def make_obs_list(inp:dict):
         
     if obs_type == ObsType.power.value or obs_type == ObsType.volt.value:
         beam_num = int(inp['SESSION']['SESSION_DRX_BEAM'])
-        do_cal = inp['SESSION'].get('DO_CAL', False)  # now treated as forcing calibration
+        do_cal = eval(inp['SESSION'].get('DO_CAL', False))
         cal_dir = inp['SESSION'].get('CAL_DIR', None)
     elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value:
         beam_num = None
