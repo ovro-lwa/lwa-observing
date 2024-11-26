@@ -16,7 +16,7 @@ def make_sched(sdf_fn, mode='buffer'):
 
     if session.obs_type is ObsType.power:
         sched = power_beam_obs(obs_list, session, mode=mode)
-    if session.obs_type is ObsType.volt:
+    if session.obs_type in [ObsType.volt, ObsType.voltraw]:
         sched = volt_beam_obs(obs_list, session, mode=mode)
     if session.obs_type is ObsType.fast:
         sched = fast_vis_obs(obs_list, session, mode=mode)
@@ -110,11 +110,11 @@ def make_obs_list(inp:dict):
     session_id = inp['SESSION']['SESSION_ID']
     config_file = inp['SESSION'].get('CONFIG_FILE', None)
         
-    if obs_type == ObsType.power.value or obs_type == ObsType.volt.value:
+    if obs_type == ObsType.power.value or obs_type == ObsType.volt.value or obs_type == ObsType.voltraw.value:
         beam_num = int(inp['SESSION']['SESSION_DRX_BEAM'])
         do_cal = eval(inp['SESSION'].get('DO_CAL', 'False'))
         cal_dir = inp['SESSION'].get('CAL_DIR', None)
-    elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value:
+    elif obs_type != ObsType.power.value or obs_type != ObsType.volt.value or obs_type != ObsType.voltraw.value:
         beam_num = None
         do_cal = False
         cal_dir = None
@@ -144,7 +144,7 @@ def make_obs_list(inp:dict):
         except:
             pass
             
-        if session.obs_type == ObsType.power or session.obs_type == ObsType.volt:
+        if session.obs_type == ObsType.power or session.obs_type == ObsType.volt or session.obs_type == ObsType.voltraw:
             ra = inp['OBSERVATIONS'][i].get('OBS_RA', None)
             if ra is not None:
                 ra = float(ra) * 15    # hours -> degrees
@@ -156,7 +156,7 @@ def make_obs_list(inp:dict):
             if obj_name is None and ra is None and dec is None and az is None and alt is None:
                 logger.warning("OBS_TARGET or direction must be defined")
 
-            if session.obs_type == ObsType.volt:
+            if session.obs_type in [ObsType.volt, ObsType.voltraw]:
                 try:
                     bw = inp['OBSERVATIONS'][i].get('OBS_BW', None)
                     if bw is not None:
@@ -389,6 +389,9 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
     assert session.beam_num == 1, "voltage beamforming currently only supported on beam 1"
 
+    if 'raw' in session.obs_type.value.lower():
+        command_suffix = "raw"
+    
     t0 = obs_list[0].obs_start
     ts = t0 - dt
     cmd = f"from mnc import control"
@@ -431,7 +434,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         else:
             beam_gain1 = beam_gain2 = beam_gain
             
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, gain1={beam_gain1}, gain2={beam_gain2})"
+        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num}{command_suffix})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, gain1={beam_gain1}, gain2={beam_gain2})"
         d.update({ts:cmd})
 
         ts += (recording_buffer)/24/3600
