@@ -3,6 +3,7 @@ import os.path
 
 class ObsType(Enum):
     volt = 'VOLT'
+    voltraw = 'VOLTRAW'
     power = 'POWER'
     fast = 'FAST'
     slow = 'SLOW'
@@ -58,7 +59,7 @@ class Session:
         if self.obs_type is ObsType.power and self.beam_num not in valid_power_beam_nums:
             raise Exception("You must specify a valid beam number if you want to observe with a beam")
         valid_volt_beam_nums = range(1,2)
-        if self.obs_type is ObsType.volt and self.beam_num not in valid_volt_beam_nums:
+        if self.obs_type in [ObsType.volt, ObsType.voltraw] and self.beam_num not in valid_volt_beam_nums:
             raise Exception("You must specify a valid beam number if you want to observe with a beam")
         return
 
@@ -133,7 +134,7 @@ class Observation:
 
         assert self.int_time <= 1024, "Integration time must be less than 1024 ms"
             
-        if self.session.obs_type is ObsType.volt:
+        if self.session.obs_type is ObsType.volt or self.session.obs_type is ObsType.voltraw:
             self.bw = bw
             self.freq1 = freq1
             self.freq2 = freq2
