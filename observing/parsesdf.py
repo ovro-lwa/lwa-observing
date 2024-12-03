@@ -199,7 +199,7 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 0.1/(24*3600)
+    ts += 1/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
 
@@ -208,7 +208,7 @@ def fast_vis_obs(obs_list, session, mode="buffer"):
     if session.beam_num is not None:
         session_mode_name += f"{session.beam_num}"
 
-    ts += 0.1/(24*3600)
+    ts += 1/(24*3600)
     cmd = "con.configure_xengine(['drvf'])"
     d.update({ts:cmd})
 
@@ -239,7 +239,7 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 0.1/(24*3600)
+    ts += 1/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
 
@@ -248,7 +248,7 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
     if session.beam_num is not None:
         session_mode_name += f"{session.beam_num}"
 
-    ts += 0.1/(24*3600)
+    ts += 1/(24*3600)
     cmd = "con.configure_xengine(['drvs'])"
     d.update({ts:cmd})
 
@@ -276,11 +276,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
-        controller_buffer = 0.1
-        configure_buffer = 0.1
-        cal_buffer = 0.1
-        pointing_buffer = 0.1
-        recording_buffer = 0.1
+        controller_buffer = 1
+        configure_buffer = 1
+        cal_buffer = 1
+        pointing_buffer = 1
+        recording_buffer = 1
 
     calibratebeams = session.cal_directory is not None and session.do_cal
 
@@ -302,40 +302,40 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 0.1/(24*3600)
+    ts += 1/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
     # the scheduler. I'm deciding that should not be the perogative of the parser.
-        
+    print(d)
     calibratebeams = session.cal_directory is not None and session.do_cal
 
     if calibratebeams or session.do_cal:
         # re-assign calibration directory if it is specified
-        ts += 0.1/(24*3600)
+        ts += 1/(24*3600)
         cmd = f"con.conf['xengines']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
     # Configure for the beam
-    ts += controller_buffer/24/3600
+    ts += controller_buffer/(24*3600)
     # always calibrate uncalibrated beams if dir provided. Give user option to apply even if already calibrated.
     cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {calibratebeams}, force={session.do_cal})"
     d.update({ts:cmd})
-
+    print(d)
     if calibratebeams or session.do_cal == True:
-        ts += cal_buffer/24/3600
+        ts += cal_buffer/(24*3600)
 
     # Go through the list of observations
     for obs in obs_list:
-        ts = obs.obs_start - (pointing_buffer + recording_buffer)/24/3600
+        ts += configure_buffer/(24*3600)  # obs.obs_start - (pointing_buffer + recording_buffer)/(24*3600)
         if mode == 'buffer':
             t0 = obs.obs_start
         elif mode == 'asap':
             t0 = "'now'"
         cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0})"
         d.update({ts:cmd})
-
-        ts += recording_buffer/24/3600
+        print(d)
+        ts += recording_buffer/(24*3600)
         if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
             targetname = obs.obj_name
             cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
@@ -346,7 +346,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
             
         d.update({ts:cmd})
 
-    ts += obs.obs_dur/1e3/24/3600
+    ts += obs.obs_dur/1e3/(24*3600)
     cmd = "print('Observation complete')"
     d.update({ts:cmd})
 
@@ -368,11 +368,11 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         pointing_buffer = 10
         recording_buffer = 5
     elif mode == 'asap':
-        controller_buffer = 0.1
-        configure_buffer = 0.1
-        cal_buffer = 0.1
-        pointing_buffer = 0.1
-        recording_buffer = 0.1
+        controller_buffer = 1
+        configure_buffer = 1
+        cal_buffer = 1
+        pointing_buffer = 1
+        recording_buffer = 1
 
     calibratebeams = session.cal_directory is not None and session.do_cal
 
@@ -394,7 +394,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 0.1/(24*3600)
+    ts += 1/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
@@ -404,19 +404,19 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
     if calibratebeams or session.do_cal == True:
         # re-assign calibration directory if it is specified
-        ts += 0.1/(24*3600)
+        ts += 1/(24*3600)
         cmd = f"con.conf['xengines']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
     # Configure for the beam
-    ts += controller_buffer/24/3600 
+    ts += controller_buffer/(24*3600 )
     cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {calibratebeams}, force={session.do_cal})"
     d.update({ts:cmd})
-    ts += (configure_buffer + cal_buffer)/24/3600
+    ts += (configure_buffer + cal_buffer)/(24*3600)
 
     # Go through the list of observations
     for obs in obs_list:
-        ts = obs.obs_start - (pointing_buffer + recording_buffer)/24/3600
+        ts = obs.obs_start - (pointing_buffer + recording_buffer)/(24*3600)
         if mode == 'buffer':
             t0 = obs.obs_start
         elif mode == 'asap':
@@ -434,7 +434,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, gain1={beam_gain1}, gain2={beam_gain2})"
         d.update({ts:cmd})
 
-        ts += (recording_buffer)/24/3600
+        ts += (recording_buffer)/(24*3600)
         if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
             targetname = obs.obj_name
             cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
@@ -445,7 +445,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
         d.update({ts:cmd})
 
-    ts += obs.obs_dur/1e3/24/3600
+    ts += obs.obs_dur/1e3/(24*3600)
     cmd = "print('Observation complete')"
     d.update({ts:cmd})
     
