@@ -391,7 +391,9 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
 
     if 'raw' in session.obs_type.value.lower():
         command_suffix = "raw"
-    
+    else:
+        command_suffix = ""
+
     t0 = obs_list[0].obs_start
     ts = t0 - dt
     cmd = f"from mnc import control"
