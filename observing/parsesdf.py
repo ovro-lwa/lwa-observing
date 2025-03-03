@@ -240,7 +240,7 @@ def slow_vis_obs(obs_list, session, mode="buffer"):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 3/(24*3600)
+    ts += 0.5/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
 
@@ -303,7 +303,7 @@ def power_beam_obs(obs_list, session, mode='buffer'):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 3/(24*3600)
+    ts += 0.5/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
@@ -399,7 +399,7 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     cmd = f"from mnc import control"
     d = {ts:cmd}
 
-    ts += 3/(24*3600)
+    ts += 0.5/(24*3600)
     cmd = f"con = control.Controller('{session.config_file}')"
     d.update({ts:cmd})
     # okay. originally, I was trying to avoid having two commands have the same timestamp to avoid confusing 
