@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from observing import obsstate as obs
@@ -51,6 +51,15 @@ async def get_images(request: Request):
     images = [f for f in os.listdir(image_dir) if fnmatch.fnmatch(f, '*.png') or fnmatch.fnmatch(f, '*.gif') or fnmatch.fnmatch(f, '*.jpg')]
 
     return templates.TemplateResponse("images.html", {"request": request, "images": images})
+
+
+@app.get("/files/{filename}", response_class=FileResponse)
+async def download_file(filename: str):
+    file_path = os.path.join(image_dir, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type='application/octet-stream', filename=filename)
+    else:
+        return {"error": "File not found"}
 
 
 @app.get("/", response_class=HTMLResponse)
