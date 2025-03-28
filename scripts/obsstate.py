@@ -56,11 +56,7 @@ async def get_images(request: Request):
 
 @app.get("/files/{filename}", response_class=FileResponse)
 async def download_html_file(filename: str):
-    file_path = os.path.join(image_dir, filename)
-    if os.path.exists(file_path) and filename.endswith(".html"):
-        return FileResponse(file_path, media_type='text/html', filename=filename)
-    else:
-        raise HTTPException(status_code=404, detail="HTML file not found")
+    return FileResponse(image_dir, media_type='text/html', filename=filename)
 
 
 @app.get("/", response_class=HTMLResponse)
