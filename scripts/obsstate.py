@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from observing import obsstate as obs
@@ -54,12 +55,12 @@ async def get_images(request: Request):
 
 
 @app.get("/files/{filename}", response_class=FileResponse)
-async def download_file(filename: str):
+async def download_html_file(filename: str):
     file_path = os.path.join(image_dir, filename)
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type='application/octet-stream', filename=filename)
+    if os.path.exists(file_path) and filename.endswith(".html"):
+        return FileResponse(file_path, media_type='text/html', filename=filename)
     else:
-        return {"error": "File not found"}
+        raise HTTPException(status_code=404, detail="HTML file not found")
 
 
 @app.get("/", response_class=HTMLResponse)
