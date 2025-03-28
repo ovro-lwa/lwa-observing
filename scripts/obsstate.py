@@ -56,6 +56,8 @@ async def get_images(request: Request):
 
 @app.get("/files/{filename}", response_class=FileResponse)
 async def download_html_file(filename: str):
+    print(f"Requested file: {filename}")
+    print('os.getcwd():', os.getcwd())
     return FileResponse(image_dir, media_type='text/html', filename=filename)
 
 
