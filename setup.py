@@ -1,14 +1,8 @@
 from setuptools import setup
-from setuptools_scm import get_version
-
-try:
-    version = get_version()
-    assert version is not None
-except (AttributeError, AssertionError):
-    version = '0.0.0'
+from version import get_git_version
 
 setup(name='lwa-observing',
-      version=version,
+      version=get_git_version(),
       url='http://github.com/ovro-lwa/lwa-observing',
       packages=['observing'],
       entry_points='''
