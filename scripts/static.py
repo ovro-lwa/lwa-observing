@@ -29,13 +29,13 @@ app.add_middleware(
 
 
 def _list_pipeline_events(root: Path, request: Request):
-    """Return [{ name, images: [{ name, href }] }] for direct child dirs, reverse alpha."""
+    """Return [{ name, images: [{ name, href }] }] for direct child dirs, reverse alpha by event."""
     if not root.is_dir():
         return []
 
     events_root = _EVENTS_ROOT_DIR
     events = []
-    for entry in sorted(root.iterdir(), key=lambda p: p.name.lower()):
+    for entry in sorted(root.iterdir(), key=lambda p: p.name.lower(), reverse=True):
         if not entry.is_dir():
             continue
         pngs = sorted(
@@ -44,7 +44,7 @@ def _list_pipeline_events(root: Path, request: Request):
                 for f in entry.iterdir()
                 if _pipeline_event_png_full_path(events_root, entry.name, f.name)
             ),
-            reverse=True,
+            key=str.lower,
         )
         events.append(
             {
