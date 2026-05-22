@@ -27,18 +27,21 @@ templates = Jinja2Templates(directory="templates")
 
 
 def _list_pipeline_events(root: Path):
-    """Return [{ name, images: [{ name, href }] }] for direct child dirs, sorted by name."""
+    """Return [{ name, images: [{ name, href }] }] for direct child dirs, reverse alpha by event."""
     if not root.is_dir():
         return []
 
     events = []
-    for entry in sorted(root.iterdir(), key=lambda p: p.name.lower()):
+    for entry in sorted(root.iterdir(), key=lambda p: p.name.lower(), reverse=True):
         if not entry.is_dir():
             continue
         pngs = sorted(
-            f.name
-            for f in entry.iterdir()
-            if f.is_file() and f.suffix.lower() == ".png"
+            (
+                f.name
+                for f in entry.iterdir()
+                if f.is_file() and f.suffix.lower() == ".png"
+            ),
+            key=str.lower,
         )
         q_event = quote(entry.name, safe="")
         events.append(
