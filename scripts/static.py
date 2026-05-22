@@ -1,6 +1,6 @@
 import os
+import stat
 from pathlib import Path
-from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -12,6 +12,7 @@ _DEFAULT_EVENTS_ROOT = "/opt/devel/pipeline/event_pngs"
 PIPELINE_EVENTS_ROOT = os.environ.get(
     "PIPELINE_EVENT_IMAGE_ROOT", _DEFAULT_EVENTS_ROOT
 )
+_EVENTS_ROOT_DIR = os.path.abspath(PIPELINE_EVENTS_ROOT)
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
@@ -27,28 +28,35 @@ app.add_middleware(
 )
 
 
-def _list_pipeline_events(root: Path):
-    """Return [{ name, images: [{ name, href }] }] for direct child dirs, sorted by name."""
+def _list_pipeline_events(root: Path, request: Request):
+    """Return [{ name, images: [{ name, href }] }] for direct child dirs, reverse alpha."""
     if not root.is_dir():
         return []
 
+    events_root = _EVENTS_ROOT_DIR
     events = []
     for entry in sorted(root.iterdir(), key=lambda p: p.name.lower()):
         if not entry.is_dir():
             continue
         pngs = sorted(
-            f.name
-            for f in entry.iterdir()
-            if f.is_file() and f.suffix.lower() == ".png"
+            (
+                f.name
+                for f in entry.iterdir()
+                if _pipeline_event_png_full_path(events_root, entry.name, f.name)
+            ),
+            reverse=True,
         )
-        q_event = quote(entry.name, safe="")
         events.append(
             {
                 "name": entry.name,
                 "images": [
                     {
                         "name": fn,
-                        "href": f"/events/{q_event}/{quote(fn, safe='')}",
+                        "href": request.url_for(
+                            "serve_pipeline_event_png",
+                            event=entry.name,
+                            filename=fn,
+                        ),
                     }
                     for fn in pngs
                 ],
@@ -58,7 +66,7 @@ def _list_pipeline_events(root: Path):
 
 
 def _pipeline_event_png_full_path(events_root: str, event: str, filename: str):
-    """Resolve a PNG under events_root; symlinks allowed (same rules as Starlette follow_symlink=True)."""
+    """Resolve a PNG under events_root; symlinks allowed (Starlette follow_symlink=True rules)."""
     if not filename.lower().endswith(".png"):
         return None
     for part in (event, filename):
@@ -74,14 +82,18 @@ def _pipeline_event_png_full_path(events_root: str, event: str, filename: str):
             return None
     except ValueError:
         return None
-    if not os.path.isfile(full_path):
+    try:
+        st = os.stat(full_path)
+    except OSError:
+        return None
+    if not stat.S_ISREG(st.st_mode):
         return None
     return full_path
 
 
-@app.get("/events/{event}/{filename}")
+@app.get("/events/{event}/{filename}", name="serve_pipeline_event_png")
 async def serve_pipeline_event_png(event: str, filename: str):
-    full = _pipeline_event_png_full_path(PIPELINE_EVENTS_ROOT, event, filename)
+    full = _pipeline_event_png_full_path(_EVENTS_ROOT_DIR, event, filename)
     if full is None:
         raise HTTPException(status_code=404)
     return FileResponse(full, media_type="image/png")
@@ -90,7 +102,7 @@ async def serve_pipeline_event_png(event: str, filename: str):
 @app.get("/")
 async def pipeline_events_landing(request: Request):
     root = Path(PIPELINE_EVENTS_ROOT)
-    events = _list_pipeline_events(root)
+    events = _list_pipeline_events(root, request)
     return templates.TemplateResponse(
         "pipeline_events.html",
         {
