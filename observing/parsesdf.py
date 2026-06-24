@@ -332,7 +332,11 @@ def power_beam_obs(obs_list, session, mode='buffer'):
             t0 = obs.obs_start
         elif mode == 'asap':
             t0 = "'now'"
-        cmd = f"con.start_dr(recorders=['dr'+str({session.beam_num})], duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0})"
+        cmd = (
+            f"from observing import recmetadata as rm; _rec = con.start_dr(recorders=['dr'+str({session.beam_num})], "
+            f"duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0}); "
+            f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
+        )
         d.update({ts:cmd})
 
         ts += recording_buffer/(24*3600)
@@ -436,7 +440,13 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         else:
             beam_gain1 = beam_gain2 = beam_gain
             
-        cmd = f"con.start_dr(recorders=['drt'+str({session.beam_num}{command_suffix})], duration = {obs.obs_dur}, time_avg=0, t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, gain1={beam_gain1}, gain2={beam_gain2})"
+        cmd = (
+            f"from observing import recmetadata as rm; _rec = con.start_dr("
+            f"recorders=['drt'+str({session.beam_num}{command_suffix})], duration = {obs.obs_dur}, time_avg=0, "
+            f"t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, "
+            f"gain1={beam_gain1}, gain2={beam_gain2}); "
+            f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
+        )
         d.update({ts:cmd})
 
         ts += (recording_buffer)/(24*3600)
