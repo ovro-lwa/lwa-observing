@@ -28,6 +28,7 @@ from mnc.common import LWATime, NCHAN as NCHAN_NATIVE, CLOCK as CLOCK_NATIVE
 from mnc.xengine_beamformer_control import BeamPointingControl
 
 from observing import schedule as ovro_schedule, parsesdf as ovro_parsesdf
+from observing import recmetadata
 
 # Slack setup
 if "SLACK_TOKEN_LWA" in os.environ:
@@ -501,6 +502,22 @@ def main(args):
                 if status[1]['status'] == 'success':
                     fh.write("  1 [%s] ['%s']  0 [UNK]\n" % (os.path.basename(status[1]['response']['filename']),
                                                              os.path.dirname(status[1]['response']['filename'])))
+                    try:
+                        sdf_entry = ovro_parsesdf.sdf_to_dict(args.filename)
+                        first_obs_id = next(iter(sdf_entry['OBSERVATIONS'].values()))['OBS_ID']
+                        metadata = recmetadata.build_metadata(sdf_entry, first_obs_id)
+                        recorder = (
+                            f"drt{obs[0]['beam']}"
+                            if obs[0]['beam'] == 1 and obs[0]['time_avg'] == 0
+                            else f"dr{obs[0]['beam']}"
+                        )
+                        recmetadata.write_sidecar_from_record_response(
+                            status[1],
+                            metadata,
+                            recorder=recorder,
+                        )
+                    except Exception as exc:
+                        logger.warning("Could not write recorder sidecar metadata: %s", exc)
         else:
             logger.error("Record command failed: %s", str(status[1]))
             

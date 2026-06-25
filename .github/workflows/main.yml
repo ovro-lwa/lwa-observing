@@ -62,7 +62,6 @@ jobs:
             python-casacore \
             h5py \
             matplotlib \
-            setuptools_scm \
             pytest \
             wheel
           python -m pip install \

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pipeline event PNGs</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --surface: #1a2332;
+            --border: #2d3a4d;
+            --text: #e7ecf3;
+            --muted: #8b9cb3;
+            --accent: #6cb3ff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 1.25rem 1.5rem 2rem;
+            font-family: system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.45;
+        }
+        h1 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 0 0 0.35rem;
+        }
+        .subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+        .subtitle code {
+            background: var(--surface);
+            padding: 0.12rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .layout {
+            display: flex;
+            align-items: stretch;
+            gap: 1.25rem;
+            min-height: min(70vh, 900px);
+        }
+        .tree {
+            flex: 0 0 min(340px, 38vw);
+            max-height: min(75vh, 920px);
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: var(--surface);
+        }
+        details.event-dir {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 0.45rem;
+            background: var(--bg);
+        }
+        details.event-dir:last-child {
+            margin-bottom: 0;
+        }
+        details.event-dir summary {
+            cursor: pointer;
+            padding: 0.55rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--accent);
+            user-select: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        details.event-dir summary::-webkit-details-marker {
+            display: none;
+        }
+        details.event-dir summary::before {
+            content: "▸";
+            display: inline-block;
+            width: 1em;
+            margin-right: 0.35rem;
+            transition: transform 0.15s ease;
+            color: var(--muted);
+            font-size: 0.85em;
+        }
+        details.event-dir[open] summary::before {
+            transform: rotate(90deg);
+        }
+        details.event-dir summary:hover {
+            background: rgba(108, 179, 255, 0.08);
+        }
+        details.event-dir[open] summary {
+            border-bottom: 1px solid var(--border);
+        }
+        .count {
+            font-weight: 500;
+            font-size: 0.78rem;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+        .file-list {
+            margin: 0;
+            padding: 0.35rem 0;
+            list-style: none;
+        }
+        .file-list li {
+            margin: 0;
+        }
+        .file-link {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            padding: 0.32rem 0.75rem 0.32rem 1.6rem;
+            font: inherit;
+            font-size: 0.84rem;
+            word-break: break-all;
+        }
+        .file-link:hover {
+            background: rgba(108, 179, 255, 0.12);
+            color: var(--accent);
+        }
+        .file-link.active {
+            background: rgba(108, 179, 255, 0.2);
+            color: var(--accent);
+        }
+        .empty-dir {
+            margin: 0;
+            padding: 0.5rem 0.75rem 0.65rem;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+        .preview {
+            flex: 1;
+            min-width: 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 1rem;
+        }
+        .preview-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 2rem;
+            max-width: 28rem;
+        }
+        .preview-placeholder[hidden] {
+            display: none;
+        }
+        #preview-img {
+            max-width: 100%;
+            max-height: min(65vh, 800px);
+            object-fit: contain;
+            border-radius: 4px;
+            background: #111820;
+        }
+        #preview-img[hidden] {
+            display: none;
+        }
+        .preview-meta {
+            margin-top: 0.75rem;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.5rem 1rem;
+            justify-content: center;
+            font-size: 0.82rem;
+            color: var(--muted);
+            word-break: break-all;
+        }
+        .preview-meta[hidden] {
+            display: none;
+        }
+        .preview-meta a {
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        .empty-events {
+            color: var(--muted);
+            padding: 2rem;
+            text-align: center;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+        }
+        .empty-events pre {
+            text-align: left;
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 768px) {
+            .layout {
+                flex-direction: column;
+                min-height: unset;
+            }
+            .tree {
+                flex: none;
+                max-width: none;
+                max-height: 45vh;
+            }
+            #preview-img {
+                max-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Pipeline event PNGs</h1>
+    <p class="subtitle">
+        Files under <code>{{ root_path }}</code>, grouped by event subdirectory.
+        Expand a folder, then choose a file to load it here. URLs remain <code>/events/&lt;event&gt;/&lt;file&gt;.png</code>.
+    </p>
+
+    {% if not events %}
+    <div class="empty-events">
+        <p>No events found. Create subdirectories named after each event and add PNG files.</p>
+        <pre>{{ root_path }}/
+├── event_a/
+│   ├── plot_001.png
+│   └── summary.png
+└── event_b/
+    └── waterfall.png</pre>
+    </div>
+    {% else %}
+    <div class="layout">
+        <nav class="tree" aria-label="Events">
+            {% for ev in events %}
+            <details class="event-dir">
+                <summary>
+                    <span>{{ ev.name }}</span>
+                    <span class="count">{{ ev.images|length }} PNG{% if ev.images|length != 1 %}s{% endif %}</span>
+                </summary>
+                {% if ev.images %}
+                <ul class="file-list">
+                    {% for img in ev.images %}
+                    <li>
+                        <button type="button" class="file-link" data-src="{{ img.href }}">{{ img.name }}</button>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="empty-dir">No PNG files in this folder yet.</p>
+                {% endif %}
+            </details>
+            {% endfor %}
+        </nav>
+        <section class="preview" aria-live="polite" aria-label="Image preview">
+            <div class="preview-placeholder" id="preview-placeholder">
+                Expand an event folder on the left, then click a filename to load the PNG.
+            </div>
+            <img id="preview-img" alt="" hidden width="800" height="600">
+            <div id="preview-meta" class="preview-meta" hidden>
+                <span id="preview-caption"></span>
+                <a id="preview-open" href="#" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+            </div>
+        </section>
+    </div>
+    {% endif %}
+
+    <script>
+        (function () {
+            var placeholder = document.getElementById("preview-placeholder");
+            var imgEl = document.getElementById("preview-img");
+            var meta = document.getElementById("preview-meta");
+            var caption = document.getElementById("preview-caption");
+            var openLink = document.getElementById("preview-open");
+            var tree = document.querySelector(".tree");
+            if (!tree || !placeholder || !imgEl) return;
+
+            function resetPreviewMessage(msg) {
+                placeholder.textContent = msg;
+                placeholder.removeAttribute("hidden");
+                imgEl.setAttribute("hidden", "");
+                meta.setAttribute("hidden", "");
+                imgEl.removeAttribute("src");
+            }
+
+            imgEl.addEventListener("load", function () {
+                placeholder.setAttribute("hidden", "");
+                imgEl.removeAttribute("hidden");
+                meta.removeAttribute("hidden");
+            });
+
+            imgEl.addEventListener("error", function () {
+                resetPreviewMessage("Could not load this image (missing file, permission, or bad symlink target).");
+            });
+
+            tree.addEventListener("click", function (e) {
+                var btn = e.target.closest(".file-link");
+                if (!btn || !tree.contains(btn)) return;
+                var src = btn.getAttribute("data-src");
+                if (!src) return;
+
+                tree.querySelectorAll(".file-link.active").forEach(function (b) {
+                    b.classList.remove("active");
+                });
+                btn.classList.add("active");
+
+                caption.textContent = btn.textContent.trim();
+                openLink.href = src;
+                imgEl.alt = caption.textContent;
+                imgEl.setAttribute("hidden", "");
+                meta.setAttribute("hidden", "");
+                placeholder.removeAttribute("hidden");
+                placeholder.textContent = "Loading…";
+                imgEl.src = src;
+            });
+        })();
+    </script>
+</body>
+</html>

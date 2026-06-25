@@ -6,10 +6,13 @@ from observing import schedule, makesdf, parsesdf
 from mnc import control
 import sys
 import logging
+import warnings
 from astropy.time import Time
 
+warnings.filterwarnings('ignore', module='astropy._erfa')
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
+
 
 @click.group('lwaobserving')
 def cli():
