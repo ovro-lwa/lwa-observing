@@ -6,12 +6,9 @@ Sidecar paths are taken from the recorder response returned by
 ``/lustre/pipeline/beam[xx]`` (e.g. ``/lustre/pipeline/beam03``).
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import os
-from typing import Any
 
 from astropy.time import Time
 from dsautils import dsa_store
@@ -32,7 +29,7 @@ def session_mode_name_from_session(session: dict) -> str:
     return name
 
 
-def find_observation(sdf_entry: dict, obs_id: int | str) -> dict:
+def find_observation(sdf_entry, obs_id):
     """Return the observation block matching obs_id."""
     for obs in sdf_entry.get("OBSERVATIONS", {}).values():
         if str(obs.get("OBS_ID")) == str(obs_id):
@@ -40,7 +37,7 @@ def find_observation(sdf_entry: dict, obs_id: int | str) -> dict:
     raise KeyError(f"OBS_ID {obs_id} not found in SDF entry")
 
 
-def build_metadata(sdf_entry: dict, obs_id: int | str) -> dict:
+def build_metadata(sdf_entry, obs_id):
     """Build sidecar metadata from a parsed SDF dictionary."""
     session = _normalize_fields(sdf_entry["SESSION"])
     return {
@@ -51,7 +48,7 @@ def build_metadata(sdf_entry: dict, obs_id: int | str) -> dict:
     }
 
 
-def metadata_from_etcd(session_mode_name: str, obs_id: int | str) -> dict:
+def metadata_from_etcd(session_mode_name, obs_id):
     """Load observation metadata from /mon/observing/sdfdict in etcd."""
     ls = dsa_store.DsaStore()
     sdfdict = ls.get_dict("/mon/observing/sdfdict") or {}
@@ -76,9 +73,9 @@ def write_sidecar(data_path: str, metadata: dict) -> str:
 def write_sidecar_for_recording(
     data_path: str,
     session_mode_name: str,
-    obs_id: int | str,
-    recorder: str | None = None,
-) -> str:
+    obs_id,
+    recorder=None,
+):
     """Build metadata from etcd and write a sidecar for one recording."""
     metadata = metadata_from_etcd(session_mode_name, obs_id)
     metadata["recorder"] = recorder_fields(data_path, recorder)
@@ -86,10 +83,10 @@ def write_sidecar_for_recording(
 
 
 def write_sidecar_from_record_response(
-    response: dict,
-    metadata: dict,
-    recorder: str | None = None,
-) -> str:
+    response,
+    metadata,
+    recorder=None,
+):
     """Attach recorder fields and write a sidecar from a record command response."""
     data_path = data_path_from_response(response)
     payload = dict(metadata)
@@ -98,10 +95,10 @@ def write_sidecar_from_record_response(
 
 
 def write_sidecars(
-    recordings: dict | None,
-    session_mode_name: str,
-    obs_id: int | str,
-) -> list[str]:
+    recordings,
+    session_mode_name,
+    obs_id,
+):
     """Write sidecars for all recordings returned by Controller.start_dr."""
     if not recordings:
         logger.warning(
@@ -141,7 +138,7 @@ def data_path_from_response(response: dict) -> str:
     return filename
 
 
-def recorder_fields(data_path: str, recorder: str | None) -> dict:
+def recorder_fields(data_path, recorder=None):
     return {
         "name": recorder,
         "path": data_path,
@@ -150,8 +147,8 @@ def recorder_fields(data_path: str, recorder: str | None) -> dict:
     }
 
 
-def _normalize_fields(fields: dict) -> dict[str, Any]:
-    normalized: dict[str, Any] = {}
+def _normalize_fields(fields):
+    normalized = {}
     for key, value in fields.items():
         if isinstance(value, list):
             normalized[key] = value[0] if len(value) == 1 else value
