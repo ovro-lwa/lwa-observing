@@ -1,4 +1,20 @@
 import os.path
+import warnings
+
+try:
+    from erfa import ErfaWarning
+except ImportError:  # astropy < 5 keeps ERFA in astropy._erfa
+    from astropy.utils.exceptions import ErfaWarning
+
+# dsa_syslog stamps every log line with Time.now(). ERFA flags that UTC year
+# as dubious when it is more than five years past the last leap second in the
+# bundled table (astropy 4.1's table ends in 2016, so 2026 warns on each call).
+warnings.filterwarnings(
+    'ignore',
+    category=ErfaWarning,
+    message=r'ERFA function "(dtf2d|d2dtf)" yielded .* "dubious year',
+)
+
 import click
 from time import sleep
 from dsautils import dsa_store
@@ -6,10 +22,8 @@ from observing import schedule, makesdf, parsesdf, validatesdf
 from mnc import control
 import sys
 import logging
-import warnings
 from astropy.time import Time
 
-warnings.filterwarnings('ignore', module='astropy._erfa')
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
 
