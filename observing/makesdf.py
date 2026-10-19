@@ -16,6 +16,8 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
            pi_id=None, pi_name=None, config_file=None, n_obs=1, obs_mode=None, obs_start=None, obs_dur=None, ra=None,
            dec=None, obj_name=None, int_time=None):
     """ Create a file out_name as an SDF
+    ra and dec are in degrees (ra is converted to hours in the SDF). For obs_mode AZALT, ra and dec are
+    interpreted as azimuth and altitude in degrees.
     """
 
     sdf_text = ''

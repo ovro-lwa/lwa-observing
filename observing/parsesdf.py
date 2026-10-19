@@ -138,12 +138,9 @@ def make_obs_list(inp:dict):
         obs_mode = inp['OBSERVATIONS'][i]['OBS_MODE']
 
         obs = Observation(session, obs_id, obs_start, obs_dur, obs_mode)
-        try:
-            if obs_list[-1].obs_start > obs.obs_start:
-                raise Exception('Current observation starts before previous observation')
-        except:
-            pass
-            
+        if obs_list and obs_list[-1].obs_start > obs.obs_start:
+            raise ValueError(f'Observation {obs_id} starts before previous observation {obs_list[-1].obs_id}')
+
         if session.obs_type == ObsType.power or session.obs_type == ObsType.volt or session.obs_type == ObsType.voltraw:
             ra = inp['OBSERVATIONS'][i].get('OBS_RA', None)
             if ra is not None:
@@ -316,6 +313,10 @@ def power_beam_obs(obs_list, session, mode='buffer'):
         cmd = f"con.conf['xengines']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
+    # In buffer mode, recorders are given future start times right away, so slow setup or tracking cannot delay them
+    early_obs = obs_list if mode == 'buffer' else []
+    d.update(_early_start_dr(ts, [power_start_dr(session, obs, obs.obs_start, session_mode_name) for obs in early_obs]))
+
     # Configure for the beam
     ts += controller_buffer/(24*3600)
     # always calibrate uncalibrated beams if dir provided. Give user option to apply even if already calibrated.
@@ -328,16 +329,8 @@ def power_beam_obs(obs_list, session, mode='buffer'):
 #    ts += configure_buffer/(24*3600)
     for obs in obs_list:
         ts = obs.obs_start - (pointing_buffer + recording_buffer)/(24*3600)
-        if mode == 'buffer':
-            t0 = obs.obs_start
-        elif mode == 'asap':
-            t0 = "'now'"
-        cmd = (
-            f"from observing import recmetadata as rm; _rec = con.start_dr(recorders=['dr'+str({session.beam_num})], "
-            f"duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0}); "
-            f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
-        )
-        d.update({ts:cmd})
+        if obs not in early_obs:
+            d.update({ts: power_start_dr(session, obs, "'now'", session_mode_name)})
 
         ts += recording_buffer/(24*3600)
         if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
@@ -417,6 +410,17 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
         cmd = f"con.conf['xengines']['cal_directory'] = '{session.cal_directory}'"
         d.update({ts:cmd})
 
+    # In buffer mode, recorders are given future start times right away, so slow setup or tracking cannot delay them.
+    # start_dr retunes the t-engine immediately, so only observations sharing the first tuning can go early.
+    early_obs = []
+    if mode == 'buffer':
+        for obs in obs_list:
+            if _tuning(obs) != _tuning(obs_list[0]):
+                break
+            early_obs.append(obs)
+    d.update(_early_start_dr(ts, [volt_start_dr(session, obs, obs.obs_start, session_mode_name, command_suffix)
+                                  for obs in early_obs]))
+
     # Configure for the beam
     ts += controller_buffer/(24*3600 )
     cmd = f"con.configure_xengine(['dr'+str({session.beam_num})], calibratebeams = {calibratebeams}, force={session.do_cal})"
@@ -426,28 +430,9 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     # Go through the list of observations
     for obs in obs_list:
         ts = obs.obs_start - (pointing_buffer + recording_buffer)/(24*3600)
-        if mode == 'buffer':
-            t0 = obs.obs_start
-        elif mode == 'asap':
-            t0 = "'now'"
-        beam_gain = obs.gain
-        if beam_gain is None or beam_gain == -1:
-            beam_gain = 6
-            logger.warning(f"OBS_DRX_GAIN is not defined, using a value of {beam_gain}")
-        if beam_gain > 15:
-            beam_gain1 = (beam_gain >> 8) & 0xFF
-            beam_gain2 = beam_gain & 0xFF
-        else:
-            beam_gain1 = beam_gain2 = beam_gain
-            
-        cmd = (
-            f"from observing import recmetadata as rm; _rec = con.start_dr("
-            f"recorders=['drt'+str({session.beam_num}{command_suffix})], duration = {obs.obs_dur}, time_avg=0, "
-            f"t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, "
-            f"gain1={beam_gain1}, gain2={beam_gain2}); "
-            f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
-        )
-        d.update({ts:cmd})
+        if obs not in early_obs:
+            t0 = obs.obs_start if mode == 'buffer' else "'now'"
+            d.update({ts: volt_start_dr(session, obs, t0, session_mode_name, command_suffix)})
 
         ts += (recording_buffer)/(24*3600)
         if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
@@ -469,3 +454,48 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
     df.insert(1, column='session_id',value=session.session_id)
     df.insert(1, column='session_mode_name', value=session_mode_name)
     return df
+
+
+def _early_start_dr(ts, cmds, step_s=0.01):
+    """ Return {time: command} placing cmds just after ts, spaced by step_s so timestamps stay unique and ordered
+    """
+
+    return {ts + (i + 1)*step_s/(24*3600): cmd for i, cmd in enumerate(cmds)}
+
+
+def _tuning(obs):
+    return (obs.freq1, obs.freq2, obs.bw, obs.gain)
+
+
+def power_start_dr(session, obs, t0, session_mode_name):
+    """ Command to start the power beam recorder for obs at t0 (mjd or "'now'")
+    """
+
+    return (
+        f"from observing import recmetadata as rm; _rec = con.start_dr(recorders=['dr'+str({session.beam_num})], "
+        f"duration = {obs.obs_dur}, time_avg={obs.int_time}, t0 = {t0}); "
+        f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
+    )
+
+
+def volt_start_dr(session, obs, t0, session_mode_name, command_suffix):
+    """ Command to tune the t-engine and start the voltage beam recorder for obs at t0 (mjd or "'now'")
+    """
+
+    beam_gain = obs.gain
+    if beam_gain is None or beam_gain == -1:
+        beam_gain = 6
+        logger.warning(f"OBS_DRX_GAIN is not defined, using a value of {beam_gain}")
+    if beam_gain > 15:
+        beam_gain1 = (beam_gain >> 8) & 0xFF
+        beam_gain2 = beam_gain & 0xFF
+    else:
+        beam_gain1 = beam_gain2 = beam_gain
+
+    return (
+        f"from observing import recmetadata as rm; _rec = con.start_dr("
+        f"recorders=['drt'+str({session.beam_num}{command_suffix})], duration = {obs.obs_dur}, time_avg=0, "
+        f"t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, "
+        f"gain1={beam_gain1}, gain2={beam_gain2}); "
+        f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
+    )

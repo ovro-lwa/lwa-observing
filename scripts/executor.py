@@ -15,7 +15,7 @@ import multiprocessing as mp
 from pandas import DataFrame
 from astropy.time import Time
 from mnc import common  # inherited by threads
-from observing import parsesdf, schedule, obsstate
+from observing import parsesdf, schedule, obsstate, validatesdf
 from dsautils import dsa_store
 
 logger = common.get_logger(__name__)
@@ -59,8 +59,16 @@ if __name__ == "__main__":
                 # option to submit session with option to execute asap
                 filename = event['filename']
                 if os.path.exists(filename):
-                    logger.info(f"Checking session in {filename}")
-                    sched = parsesdf.make_sched(filename, mode=mode)
+                    logger.info(f"Checking session in {filename} ({mode} mode)")
+                    report = validatesdf.validate(filename, mode=mode)
+                    for msg in report.errors:
+                        logger.warning(f"{filename}: {msg}")
+                    for msg in report.warnings:
+                        logger.info(f"{filename}: {msg}")
+                    if report.sched is None:
+                        logger.error(f"Rejected {filename}: could not build a schedule ({report.parse_error})")
+                        return
+                    sched = report.sched
                     sched.sort_index(inplace=True)
 
                     if not schedule.is_conflicted(sched):
@@ -77,8 +85,7 @@ if __name__ == "__main__":
                         schedule.put_dict(filename)
 
                     else:
-                        # should probably log this better or return to cli user
-                        logger.warning(f"Session {filename} conflicts with existing session.")
+                        logger.warning(f"Rejected {filename}: session conflicts with an existing session.")
                 else:
                     logger.warning(f"File {filename} does not exist.")
             elif 'filename' not in event and 'command' in event and 'mjd' in event:
@@ -109,7 +116,13 @@ if __name__ == "__main__":
                         logger.warning(f"Command {command} conflicts with existing command.")
             else:
                 logger.debug(f"No filename defined.")
-        return a
+
+        def a_logged(event):
+            try:
+                a(event)
+            except Exception:
+                logger.exception(f"Failed to handle submission {event}")
+        return a_logged
     ls.add_watch('/cmd/observing/submitsdf', sched_callback())   # TODO: generalize key name to "submit"?
 
     if len(sys.argv) == 2:

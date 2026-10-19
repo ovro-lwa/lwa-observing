@@ -103,31 +103,36 @@ def get_sched():
     return scheduled, active
 
 
-def is_conflicted(sched):
-    """ Check if sched is requesting a beam that is already scheduled or submitted
+def find_conflicts(sched):
+    """ Return descriptions of scheduled or submitted sessions that use the same mode/beam during sched
     """
 
     scheduled, active = get_sched()
     sched_dict = create_dict(sched)
 
+    conflicts = []
     # iterate over sched_dict keys of unique observing modes to get values of (start, stop)
     for kk,vv in sched_dict.items():
-
-        # if observing mode is scheduled, compare (start, stop)
-        if kk in scheduled.keys():
-            for trange in scheduled[kk].values():
+        for state, existing in (('scheduled', scheduled), ('active', active)):
+            if kk not in existing.keys():
+                continue
+            # if observing mode is scheduled or active, compare (start, stop)
+            for name, trange in existing[kk].items():
                 for (t0, t1) in vv.values():
                     if (t0 >= trange[0] and t0 <= trange[1]) or (t1 >= trange[0] and t1 <= trange[1]):
-                        return True
+                        conflicts.append(f"{state} session {name} (MJD {trange[0]:.6f} to {trange[1]:.6f})")
 
-        # if observing mode is active, compare (start, stop)
-        if kk in active.keys():
-            for trange in active[kk].values():
-                for (t0, t1) in vv.values():
-                    if (t0 >= trange[0] and t0 <= trange[1]) or (t1 >= trange[0] and t1 <= trange[1]):
-                        return True
+    return conflicts
 
-    return False
+
+def is_conflicted(sched):
+    """ Check if sched is requesting a beam that is already scheduled or submitted
+    """
+
+    conflicts = find_conflicts(sched)
+    if conflicts:
+        logger.warning(f"Conflicts with {', '.join(conflicts)}")
+    return bool(conflicts)
 
 
 def print_sched(mode=None):
@@ -188,7 +193,9 @@ def sched_update(sched, mode='buffer'):
                     if s0.index[0] > time.Time.now().mjd:
                         include.append(s0)
                     else:
-                        logger.warning(f"Removing session starting at {s0.index[0]}")
+                        late_s = (time.Time.now().mjd - s0.index[0]) * 24 * 3600
+                        logger.warning(f"Removing session {s0.session_mode_name.iloc[0]}: first command at MJD "
+                                       f"{s0.index[0]} was due {late_s:.0f} s ago (buffer mode drops started sessions)")
                         try:
                             obsstate.update_session(int(s0.session_id.iloc[0]), 'skipped')
                         except Exception as exc:
@@ -237,13 +244,22 @@ def runrow(rows):
 #        elif mjd - time.Time.now().mjd < -10/(24*3600):
 #            logger.warning(f"Skipping command at MJD {mjd}...")
 #            continue
+
+        t_start = time.Time.now().mjd
+        late_s = (t_start - mjd) * 24 * 3600
+        if late_s > 2:
+            logger.warning(f"Session {row.session_mode_name}: running command {late_s:.1f} s late: {row.command}")
         else:
             logger.info(f"Submitting command:  {row.command}")
 
         try:
             exec(row.command)
         except Exception as exc:
-            logger.warning(exc)
+            logger.exception(f"Session {row.session_mode_name}: command failed: {row.command}")
+
+        elapsed_s = (time.Time.now().mjd - t_start) * 24 * 3600
+        if elapsed_s > 5:
+            logger.info(f"Session {row.session_mode_name}: command took {elapsed_s:.1f} s: {row.command}")
 
     # if loop completes, then set session to completed
     try:

@@ -2,7 +2,7 @@ import os.path
 import click
 from time import sleep
 from dsautils import dsa_store
-from observing import schedule, makesdf, parsesdf
+from observing import schedule, makesdf, parsesdf, validatesdf
 from mnc import control
 import sys
 import logging
@@ -23,11 +23,62 @@ def cli():
 # Other tool "lwamnc"?
 # - print go/no-go status
 
+def _check_against_executor(report, ignore_schedule=False):
+    """ Add checks that need etcd: conflicts and earlier submissions of the same session.
+    """
+
+    name = report.session_mode_name
+    try:
+        sdfdict = ls.get_dict('/mon/observing/sdfdict') or {}
+        if name is not None and name in sdfdict:
+            report.warn(f"Session {name} was parsed by the executor before. Was this SDF already submitted?")
+        if report.sched is not None and not ignore_schedule:
+            for conflict in schedule.find_conflicts(report.sched):
+                report.error(f"Conflicts with {conflict}. The executor rejects conflicting sessions")
+    except Exception as exc:
+        report.warn(f"Could not check the current schedule in etcd ({type(exc).__name__}: {exc})")
+
+
+def _session_state(name):
+    """ Return 'scheduled', 'active', or None for a session_mode_name.
+    """
+
+    scheduled, active = schedule.get_sched()
+    if any(name in sessions for sessions in active.values()):
+        return 'active'
+    if any(name in sessions for sessions in scheduled.values()):
+        return 'scheduled'
+    return None
+
+
+@cli.command()
+@click.argument('sdffile')
+@click.option('--asap', is_flag=True, default=False, show_default=True,
+              help='Validate timing as for "submit-sdf --asap".')
+@click.option('--offline', is_flag=True, default=False, show_default=True,
+              help='Skip checks against the executor schedule in etcd.')
+def validate_sdf(sdffile, asap, offline):
+    """ Parse an SDF and report whether the executor can schedule it.
+    Exits with status 1 if the SDF has errors.
+    """
+
+    sdffile = os.path.abspath(sdffile)
+    report = validatesdf.validate(sdffile, mode='asap' if asap else 'buffer')
+    if not offline:
+        _check_against_executor(report)
+
+    click.echo(report.format())
+    if not report.ok:
+        sys.exit(1)
+
+
 @cli.command()
 @click.argument('sdffile')
 @click.option('--asap', is_flag=True, default=False, show_default=True)
 @click.option('--reset', is_flag=True, default=False, show_default=True)
-def submit_sdf(sdffile, asap, reset):
+@click.option('--timeout', default=10., type=float, show_default=True,
+              help='Seconds to wait for the executor to confirm the session is scheduled.')
+def submit_sdf(sdffile, asap, reset, timeout):
     """ Submit and SDF by providing the full path to the file.
     Flag value asap will submit sdf with commands executed as soon as possible.
     Flag value reset will reset the schedule.
@@ -38,48 +89,43 @@ def submit_sdf(sdffile, asap, reset):
         sdffile = os.path.abspath(sdffile)
         print(f"Not a full path. Assuming {sdffile}...")
 
-    assert os.path.exists(sdffile), f"File {sdffile} not found"
+    mode = 'asap' if asap else 'buffer'
+    report = validatesdf.validate(sdffile, mode=mode)
+    _check_against_executor(report, ignore_schedule=reset)
+    print(report.format())
+    if not report.ok:
+        print(f"Not submitting {sdffile}. Fix the errors above, or run 'lwaobserving validate-sdf' to re-check.")
+        sys.exit(1)
 
-    # try parsing SDF
-    try:
-        dd = parsesdf.sdf_to_dict(sdffile)
-        session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
-        if 'SESSION_DRX_BEAM' in dd['SESSION']:
-            session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
-        if session_mode_name in ls.get_dict('/mon/observing/sdfdict'):
-            print(f"Warning: SDF {sdffile} was parsed by scheduler before. Was this SDF already submitted?")
-
-        sched = parsesdf.make_sched(sdffile)
-        if schedule.is_conflicted(sched) and not asap:
-            print(f"Warning: SDF {sdffile} is conflicted with current schedule")
-            return
-    except:
-        print(f"Warning: SDF {sdffile} could not be parsed into scheduling commands.")
-        return
-
+    name = report.session_mode_name
     if reset:
         ls.put_dict('/mon/observing/schedule', {})
         ls.put_dict('/mon/observing/submitted', {})
         ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
 
-    mode = 'asap' if asap else 'buffer'
     ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
+    print(f"Submitted session {name} to executor in {mode} mode. Waiting up to {timeout:.0f} s for confirmation...")
 
-    # wait, then see if it got parsed and scheduled
-    sleep(1)
-    sdfdict = ls.get_dict('/mon/observing/sdfdict')
-    if session_mode_name not in sdfdict:
-        print(f"SDF failed to get parsed by scheduler (session mode name: {session_mode_name})")
+    # poll until the executor shows the session as scheduled or active
+    t_stop = Time.now().unix + timeout
+    state = None
+    while state is None and Time.now().unix < t_stop:
+        sleep(0.5)
+        state = _session_state(name)
+
+    if state is not None:
+        print(f"Success: session {name} is {state}.")
         return
 
-    scheduled = ls.get_dict('/mon/observing/schedule')
-    active = ls.get_dict('/mon/observing/submitted')
-    any_scheduled = any([key for key in scheduled if session_mode_name in scheduled[key]])
-    any_active = any([key for key in active if session_mode_name in active[key]])
-    if not any_scheduled and not any_active:
-        print(f"Session {session_mode_name} not scheduled or actively observing")
+    sdfdict = ls.get_dict('/mon/observing/sdfdict') or {}
+    if name in sdfdict:
+        print(f"Failed: the executor accepted session {name} but it is not in the schedule. Most likely its "
+              "first command time passed before it was queued, so it was dropped. "
+              "Check the executor log for 'Removing session'.")
     else:
-        print("Successfullly submitted SDF to schedule.")
+        print(f"Failed: the executor did not acknowledge session {name} within {timeout:.0f} s. "
+              f"Check that the executor is running and search its log for '{sdffile}'.")
+    sys.exit(1)
 
 @cli.command()
 @click.argument('sdffile')
@@ -94,8 +140,9 @@ def submit_sdf(sdffile, asap, reset):
               help='Observation mode (e.g. TRK_RADEC, AZALT, TRK_JUPITER, TRK_SOLAR, TRK_LUNAR)')
 @click.option('--obs-start', default=None, help='Observation start time (UTC) in YYYY-MM-DDTHH:MM:SS format or "now"')
 @click.option('--obs-dur', default=None, type=int, help='Observation duration in milliseconds')
-@click.option('--ra', default=None, type=float, help='RA of target (in hours). Interpreted as Azimuth for AZALT obs-mode.')
-@click.option('--dec', default=None, type=float, help='Dec of target (in degrees). Interpreted as Azimuth for AZALT obs-mode.')
+@click.option('--ra', default=None, type=float,
+              help='RA of target in degrees (written to the SDF in hours). Interpreted as Azimuth (degrees) for AZALT obs-mode.')
+@click.option('--dec', default=None, type=float, help='Dec of target (in degrees). Interpreted as Altitude (degrees) for AZALT obs-mode.')
 @click.option('--obj-name', default=None, type=str, help='Name of object to track (used as alternative to RA/Dec)')
 @click.option('--int-time', default=None, type=int, help='Integration time in milliseconds')
 def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
