@@ -103,7 +103,11 @@ def submit_sdf(sdffile, asap, reset, timeout):
         ls.put_dict('/mon/observing/submitted', {})
         ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
 
-    ls.put_dict('/cmd/observing/submitsdf', {'filename': sdffile, 'mode': mode})
+    # The executor runs as another account and re-opens this path. Stage a world-readable copy.
+    submitted = validatesdf.stage_sdf(sdffile)
+    print(f"Copied {sdffile} to {submitted} for the executor.")
+
+    ls.put_dict('/cmd/observing/submitsdf', {'filename': submitted, 'mode': mode})
     print(f"Submitted session {name} to executor in {mode} mode. Waiting up to {timeout:.0f} s for confirmation...")
 
     # poll until the executor shows the session as scheduled or active
@@ -118,13 +122,17 @@ def submit_sdf(sdffile, asap, reset, timeout):
         return
 
     sdfdict = ls.get_dict('/mon/observing/sdfdict') or {}
+    blocked = validatesdf.other_user_access_block(submitted)
     if name in sdfdict:
         print(f"Failed: the executor accepted session {name} but it is not in the schedule. Most likely its "
               "first command time passed before it was queued, so it was dropped. "
               "Check the executor log for 'Removing session'.")
+    elif blocked is not None:
+        print(f"Failed: this process parsed session {name}, but the executor never opened {submitted}. "
+              f"The executor runs as a different account and cannot search {blocked}.")
     else:
         print(f"Failed: the executor did not acknowledge session {name} within {timeout:.0f} s. "
-              f"Check that the executor is running and search its log for '{sdffile}'.")
+              f"Check that the executor is running and search its log for '{submitted}'.")
     sys.exit(1)
 
 @cli.command()

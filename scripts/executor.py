@@ -87,7 +87,7 @@ if __name__ == "__main__":
                     else:
                         logger.warning(f"Rejected {filename}: session conflicts with an existing session.")
                 else:
-                    logger.warning(f"File {filename} does not exist.")
+                    logger.warning(validatesdf.describe_unreadable(filename))
             elif 'filename' not in event and 'command' in event and 'mjd' in event:
                 # option to submit single command
                 command = event['command']

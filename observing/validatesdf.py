@@ -5,9 +5,12 @@ Checks are grouped by severity:
  - warnings: the session will be scheduled, but something may be late or unexpected.
 """
 
+import getpass
 import os.path
 import re
+import shutil
 import traceback
+import uuid
 
 from astropy.time import Time
 
@@ -134,6 +137,68 @@ def validate(filename, mode='buffer', now=None):
     report.sched = sched
     _check_schedule(sched, report, now)
     return report
+
+
+def stage_sdf(filename, dest_dir='/tmp'):
+    """ Copy filename into dest_dir so the executor account can read it.
+    The copy is named '<basename>.<suffix>' so two submits of the same file do not overwrite each other.
+    The copy is mode 644 and is left in place; the executor opens it after this process exits.
+    """
+
+    base = os.path.basename(os.path.abspath(filename))
+    while True:
+        dest = os.path.join(dest_dir, f"{base}.{uuid.uuid4().hex[:8]}")
+        if not os.path.exists(dest):
+            break
+    shutil.copyfile(filename, dest)
+    os.chmod(dest, 0o644)
+    return dest
+
+
+def other_user_access_block(filename):
+    """ Return the first path component another account cannot traverse or read.
+    The executor opens the submitted path as its own user. A mode-700 home directory
+    makes os.path.exists return False for that user even though the file is there.
+    Returns None when every component is accessible to other users, or when this process cannot stat the path.
+    """
+
+    path = os.path.abspath(filename)
+    current = '/'
+    for part in path.split(os.sep):
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        try:
+            mode = os.stat(current).st_mode
+        except OSError:
+            return None
+        if os.path.isdir(current):
+            if not mode & 0o001:
+                return current
+        elif not mode & 0o004:
+            return current
+    return None
+
+
+def describe_unreadable(filename):
+    """ Why this process cannot open filename, including the account it runs as.
+    """
+
+    user = getpass.getuser()
+    current = '/'
+    for part in os.path.abspath(filename).split(os.sep):
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        parent = os.path.dirname(current)
+        if os.path.isdir(parent) and not os.access(parent, os.X_OK):
+            return (f"Cannot open {filename}: user {user} cannot search {parent}. "
+                    f"The file can exist and still be invisible to this process")
+        if not os.path.exists(current):
+            return f"Cannot open {filename}: {current} does not exist for user {user}"
+    if not os.access(filename, os.R_OK):
+        return f"Cannot open {filename}: user {user} cannot read it"
+    return f"Cannot open {filename}"
 
 
 def _check_lines(lines, report):

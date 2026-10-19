@@ -1,4 +1,6 @@
 import os.path
+import shutil
+import tempfile
 
 import pytest
 from astropy.time import Time
@@ -47,6 +49,45 @@ def test_volt_sdf(tmp_path):
     report = validatesdf.validate(write_sdf(tmp_path, text), now=Time('2024-02-08T00:00:00'))
     assert report.ok, report.errors
     assert report.session_mode_name == '665_VOLT1'
+
+
+def test_stage_sdf_unique_readable_copy():
+    private = tempfile.mkdtemp(dir='/tmp')
+    dest_dir = tempfile.mkdtemp(dir='/tmp')
+    try:
+        src = os.path.join(private, 'crab_12jun26.sdf')
+        open(src, 'w').write('SESSION_ID 1\n')
+        os.chmod(private, 0o700)
+
+        first = validatesdf.stage_sdf(src, dest_dir=dest_dir)
+        second = validatesdf.stage_sdf(src, dest_dir=dest_dir)
+        assert os.path.basename(first).startswith('crab_12jun26.sdf.')
+        assert first != second
+        assert open(first).read() == 'SESSION_ID 1\n'
+        assert os.stat(first).st_mode & 0o777 == 0o644
+        os.chmod(dest_dir, 0o755)
+        assert validatesdf.other_user_access_block(first) is None
+    finally:
+        shutil.rmtree(private, ignore_errors=True)
+        shutil.rmtree(dest_dir, ignore_errors=True)
+
+
+def test_other_user_cannot_search_home():
+    private = tempfile.mkdtemp(dir='/tmp')  # mode 700 under a world-searchable /tmp
+    try:
+        sdf = os.path.join(private, 'session.sdf')
+        open(sdf, 'w').write('x')
+        assert validatesdf.other_user_access_block(sdf) == private
+
+        os.chmod(private, 0o755)
+        os.chmod(sdf, 0o644)
+        assert validatesdf.other_user_access_block(sdf) is None
+
+        os.chmod(sdf, 0o600)
+        assert validatesdf.other_user_access_block(sdf) == sdf
+    finally:
+        os.chmod(private, 0o700)
+        shutil.rmtree(private)
 
 
 def test_missing_file(tmp_path):
