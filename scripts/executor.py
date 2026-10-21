@@ -79,10 +79,10 @@ if __name__ == "__main__":
                         except Exception as exc:
                             logger.warning("Could not add session to obsstate.")
 
-                        sched0 = schedule.sched_update([sched0, sched], mode=mode)
-
-                        # make function to parse and add dictionary there, keyed by session_id
+                        # Publish the SDF before the session can run. The voltage sidecar
+                        # reads it back when start_dr returns, which may be the next command.
                         schedule.put_dict(filename)
+                        sched0 = schedule.sched_update([sched0, sched], mode=mode)
 
                     else:
                         logger.warning(f"Rejected {filename}: session conflicts with an existing session.")

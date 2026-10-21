@@ -72,6 +72,21 @@ def test_write_sidecars_empty():
     assert recmetadata.write_sidecars(None, "777_POWER3", 1) == []
 
 
+def test_write_sidecars_required_without_filename():
+    with pytest.raises(RuntimeError, match="no filename"):
+        recmetadata.write_sidecars(
+            {"drt1": {"status": "success"}},
+            "2102_VOLT1",
+            1,
+            required=True,
+        )
+
+
+def test_write_sidecars_required_without_recordings():
+    with pytest.raises(RuntimeError, match="No recordings"):
+        recmetadata.write_sidecars(None, "2102_VOLT1", 1, required=True)
+
+
 def test_power_schedule_uses_start_dr_and_write_sidecars(sdf_entry):
     session, obs_list = parsesdf.make_obs_list(sdf_entry)
     df = parsesdf.power_beam_obs(obs_list, session)
@@ -90,3 +105,4 @@ def test_volt_schedule_uses_start_dr_and_write_sidecars():
     record_cmds = [cmd for cmd in df["command"] if "con.start_dr" in cmd]
     assert len(record_cmds) == len(obs_list)
     assert all("write_sidecars(_rec" in cmd for cmd in record_cmds)
+    assert all("required=True" in cmd for cmd in record_cmds)

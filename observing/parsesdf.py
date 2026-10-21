@@ -497,5 +497,5 @@ def volt_start_dr(session, obs, t0, session_mode_name, command_suffix):
         f"recorders=['drt'+str({session.beam_num}{command_suffix})], duration = {obs.obs_dur}, time_avg=0, "
         f"t0={t0}, teng_f1={obs.freq1}*(196e6/2**32), teng_f2={obs.freq2}*(196e6/2**32), f0={obs.bw}, "
         f"gain1={beam_gain1}, gain2={beam_gain2}); "
-        f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id})"
+        f"rm.write_sidecars(_rec, '{session_mode_name}', {obs.obs_id}, required=True)"
     )

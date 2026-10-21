@@ -40,38 +40,63 @@ def put_sched(sched=None):
     ls.put_dict('/mon/observing/schedule', sched_dict)
 
 
+def _observation_end_mjd(obs):
+    """ Return the end MJD of one SDF observation block, or None if it has no start.
+    """
+
+    try:
+        start = int(obs['OBS_START_MJD']) + int(obs['OBS_START_MPM']) * 1e-3 / 86400.0
+        return start + int(obs['OBS_DUR']) * 1e-3 / 86400.0
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def sdfdict_keys_to_keep(sdfdict, now_mjd, limit=10):
+    """ Keys to retain in /mon/observing/sdfdict.
+
+    Sessions that have not finished are always kept. The recorder sidecar is
+    written when the voltage recording is commanded, which can be days after
+    submit, and it reads this dict. Finished sessions are capped at `limit`
+    per mode-beam, preferring the highest session id.
+    """
+
+    keep = set()
+    finished = []
+    for key, entry in sdfdict.items():
+        ends = [_observation_end_mjd(obs) for obs in entry.get('OBSERVATIONS', {}).values()]
+        ends = [end for end in ends if end is not None]
+        if not ends or max(ends) >= now_mjd:
+            keep.add(key)
+        else:
+            finished.append(key)
+
+    by_mode = {}
+    for key in finished:
+        mode = key.split('_', 1)[1] if '_' in key else key
+        by_mode.setdefault(mode, []).append(key)
+    for keys in by_mode.values():
+        keys.sort(key=lambda key: int(key.split('_', 1)[0]) if key.split('_', 1)[0].isdigit() else 0,
+                  reverse=True)
+        keep.update(keys[:limit])
+    return keep
+
+
 def put_dict(filename, limit=10):
-    """ Parses SDF and puts dict in etcd for later retrieval by data recorders
-    limit defines the number of sessions in a given mode-beam that should be retained in sdfdict.
+    """ Parses SDF and puts dict in etcd for later retrieval by data recorders.
+    limit is how many finished sessions to retain per mode-beam. Sessions that
+    have not ended are not counted against that limit.
     """
 
     dd = parsesdf.sdf_to_dict(filename)
     session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
     if 'SESSION_DRX_BEAM' in dd['SESSION']:
-        session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
+        session_mode_name += str(dd['SESSION']['SESSION_DRX_BEAM'])
 
-    dd0 = ls.get_dict('/mon/observing/sdfdict')
-
-    # clear out old entries
-    mode_set = set([key.split('_')[1] for key in dd0])  # all unique modes used
-    sortid = sorted(dd0.keys(), reverse=True, key=lambda x: int(x.split('_')[0]))  # sort by session_id
-    keep = []
-    limit = 10
-    for mode in mode_set:
-        i = 0
-        for Id in sortid:
-            if mode in Id:
-                i+=1
-                keep.append(Id)
-                if i > limit:
-                    break
-    if len(dd0) < len(keep):
+    dd0 = ls.get_dict('/mon/observing/sdfdict') or {}
+    keep = sdfdict_keys_to_keep(dd0, time.Time.now().mjd, limit=limit)
+    if len(keep) < len(dd0):
         logger.info(f'sdfdict reduced from {len(dd0)} to {len(keep)}.')
-        
-    dd0 = {k:v for k, v in dd0.items() if k in keep}
-    
-    if dd0 is None:
-        dd0 = {}
+    dd0 = {k: v for k, v in dd0.items() if k in keep}
     dd0.update({session_mode_name: dd})
     ls.put_dict('/mon/observing/sdfdict', dd0)
 

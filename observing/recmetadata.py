@@ -98,26 +98,39 @@ def write_sidecars(
     recordings,
     session_mode_name,
     obs_id,
+    required=False,
 ):
-    """Write sidecars for all recordings returned by Controller.start_dr."""
+    """Write sidecars for all recordings returned by Controller.start_dr.
+
+    Voltage submissions pass required=True. A missing recording, a record
+    response with no filename, or a failed write then raises instead of
+    leaving a data file with no JSON.
+    """
     if not recordings:
-        logger.warning(
-            "No recordings to write sidecars for %s OBS_ID %s",
-            session_mode_name,
-            obs_id,
-        )
+        message = f"No recordings to write sidecars for {session_mode_name} OBS_ID {obs_id}"
+        if required:
+            raise RuntimeError(message)
+        logger.warning(message)
         return []
 
     sidecar_paths = []
     for recorder, info in recordings.items():
         path = info.get("path") if isinstance(info, dict) else None
         if not path:
+            message = (
+                f"Recorder {recorder} returned no filename for {session_mode_name} OBS_ID {obs_id}"
+            )
+            if required:
+                raise RuntimeError(message)
+            logger.warning(message)
             continue
         try:
             sidecar_paths.append(
                 write_sidecar_for_recording(path, session_mode_name, obs_id, recorder)
             )
         except Exception as exc:
+            if required:
+                raise
             logger.warning(
                 "Failed to write sidecar for %s OBS_ID %s recorder %s: %s",
                 session_mode_name,
@@ -125,6 +138,10 @@ def write_sidecars(
                 recorder,
                 exc,
             )
+    if required and not sidecar_paths:
+        raise RuntimeError(
+            f"No sidecar written for {session_mode_name} OBS_ID {obs_id}"
+        )
     return sidecar_paths
 
 
