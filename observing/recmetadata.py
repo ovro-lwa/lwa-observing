@@ -13,6 +13,8 @@ import os
 from astropy.time import Time
 from dsautils import dsa_store
 
+from observing import schedule
+
 logger = logging.getLogger(__name__)
 
 _SIDECAR_SUFFIX = ".meta.json"
@@ -104,7 +106,8 @@ def write_sidecars(
 
     Voltage submissions pass required=True. A missing recording, a record
     response with no filename, or a failed write then raises instead of
-    leaving a data file with no JSON.
+    leaving a data file with no JSON. Paths whose sidecars were written are
+    saved to /mon/observing/recordings for show-schedule.
     """
     if not recordings:
         message = f"No recordings to write sidecars for {session_mode_name} OBS_ID {obs_id}"
@@ -114,6 +117,7 @@ def write_sidecars(
         return []
 
     sidecar_paths = []
+    recorded_paths = []
     for recorder, info in recordings.items():
         path = info.get("path") if isinstance(info, dict) else None
         if not path:
@@ -138,10 +142,14 @@ def write_sidecars(
                 recorder,
                 exc,
             )
+            continue
+        recorded_paths.append(path)
     if required and not sidecar_paths:
         raise RuntimeError(
             f"No sidecar written for {session_mode_name} OBS_ID {obs_id}"
         )
+    if recorded_paths:
+        schedule.put_recorded(session_mode_name, obs_id, recorded_paths)
     return sidecar_paths
 
 

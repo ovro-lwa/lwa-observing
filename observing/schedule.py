@@ -8,6 +8,9 @@ from observing import obsstate, parsesdf
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
 
+RECORDINGS_KEY = '/mon/observing/recordings'
+RECORDED_SESSION_LIMIT = 5
+
 
 def create_dict(sched):
     """ Use schedule to create dict to load to etcd
@@ -37,6 +40,7 @@ def put_sched(sched=None):
         logger.info("Resetting submitted/scheduled info in etcd")
         sched_dict = {}
         ls.put_dict('/mon/observing/submitted', {})
+        ls.put_dict(RECORDINGS_KEY, {})
     ls.put_dict('/mon/observing/schedule', sched_dict)
 
 
@@ -160,6 +164,74 @@ def is_conflicted(sched):
     return bool(conflicts)
 
 
+def put_recorded(session_mode_name, obs_id, paths, limit=RECORDED_SESSION_LIMIT):
+    """ Remember data paths from one successful beamforming recording.
+
+    /mon/observing/recordings keeps the most recently recorded sessions, up to
+    limit. Another observation of a stored session updates that session and
+    moves it to the front. A failure to reach etcd is logged and ignored.
+    """
+
+    try:
+        current = ls.get_dict(RECORDINGS_KEY) or {}
+        stored = [session for session in current.get('sessions') or [] if isinstance(session, dict)]
+        previous = next(
+            (session for session in stored if session.get('session_mode_name') == session_mode_name),
+            None,
+        )
+        observations = dict(previous.get('observations') or {}) if previous else {}
+        observations[str(obs_id)] = [str(path) for path in paths]
+        updated = {'session_mode_name': session_mode_name, 'observations': observations}
+        older = [session for session in stored if session.get('session_mode_name') != session_mode_name]
+        ls.put_dict(RECORDINGS_KEY, {'sessions': [updated, *older][:limit]})
+    except Exception as exc:
+        logger.warning(f"Could not record data filenames for {session_mode_name} OBS_ID {obs_id}: {exc}")
+
+
+def get_recorded():
+    """ Sessions in /mon/observing/recordings, most recent first.
+    """
+
+    recorded = ls.get_dict(RECORDINGS_KEY) or {}
+    return [session for session in recorded.get('sessions') or []
+            if isinstance(session, dict) and session.get('session_mode_name')]
+
+
+def _mode_of(session_mode_name):
+    return session_mode_name.split('_', 1)[1] if '_' in session_mode_name else session_mode_name
+
+
+def _obs_id_key(obs_id):
+    text = str(obs_id)
+    return (0, int(text)) if text.isdigit() else (1, text)
+
+
+def _log_recorded(mode=None):
+    """ Log the Last recorded section. mode limits lines to one schedule mode.
+    """
+
+    sessions = get_recorded()
+    if mode is not None:
+        sessions = [session for session in sessions if _mode_of(session['session_mode_name']) == mode]
+        if not sessions:
+            logger.info(f"Mode {mode} not in recorded history.")
+            return
+    elif not sessions:
+        return
+
+    logger.info("Last recorded:")
+    for session in sessions:
+        logger.info(f"\tSession: {session['session_mode_name']}")
+        observations = session.get('observations') or {}
+        for obs_id in sorted(observations, key=_obs_id_key):
+            paths = observations[obs_id]
+            if isinstance(paths, str):
+                paths = [paths]
+            for path in paths or []:
+                logger.info(f"\t\tOBS {obs_id}: {path}")
+    logger.info('\n')
+
+
 def print_sched(mode=None):
     """ Gets schedule from etcd and prints it
     """
@@ -200,6 +272,8 @@ def print_sched(mode=None):
         else:
             for kk2,vv2 in dd2[mode].items():
                 logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
+
+    _log_recorded(mode)
 
 
 def sched_update(sched, mode='buffer'):

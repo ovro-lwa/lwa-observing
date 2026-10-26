@@ -115,6 +115,7 @@ def submit_sdf(sdffile, asap, reset, timeout):
     if reset:
         ls.put_dict('/mon/observing/schedule', {})
         ls.put_dict('/mon/observing/submitted', {})
+        ls.put_dict(schedule.RECORDINGS_KEY, {})
         ls.put_dict('/cmd/observing/submitsdf', {'sdffile': None, 'mode': 'reset'})
 
     # The executor runs as another account and re-opens this path. Stage a world-readable copy.

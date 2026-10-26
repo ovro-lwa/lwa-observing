@@ -3,7 +3,7 @@ import os.path
 
 import pytest
 
-from observing import parsesdf, recmetadata
+from observing import parsesdf, recmetadata, schedule
 
 _install_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -57,6 +57,12 @@ def test_write_sidecars(tmp_path, monkeypatch):
         "metadata_from_etcd",
         lambda session_mode_name, obs_id: recmetadata.build_metadata(sdf_entry, obs_id),
     )
+    recorded = {}
+
+    def capture(session_mode_name, obs_id, paths):
+        recorded["call"] = (session_mode_name, obs_id, paths)
+
+    monkeypatch.setattr(schedule, "put_recorded", capture)
 
     paths = recmetadata.write_sidecars(recordings, "777_POWER3", 1)
 
@@ -65,14 +71,46 @@ def test_write_sidecars(tmp_path, monkeypatch):
         loaded = json.load(fh)
     assert loaded["session_mode_name"] == "777_POWER3"
     assert loaded["recorder"]["name"] == "dr3"
+    assert recorded["call"] == ("777_POWER3", 1, [str(data_path)])
 
 
-def test_write_sidecars_empty():
+def test_write_sidecars_records_successful_paths_only(tmp_path, monkeypatch):
+    good = tmp_path / "good.dat"
+
+    def write_one(path, session_mode_name, obs_id, recorder=None):
+        if path.endswith("bad.dat"):
+            raise OSError("disk full")
+        return f"{path}.meta.json"
+
+    recorded = {}
+    monkeypatch.setattr(recmetadata, "write_sidecar_for_recording", write_one)
+    monkeypatch.setattr(
+        schedule, "put_recorded", lambda name, obs_id, paths: recorded.update(name=name, obs_id=obs_id, paths=paths)
+    )
+
+    paths = recmetadata.write_sidecars(
+        {"dr3": {"path": str(good)}, "dr4": {"path": str(tmp_path / "bad.dat")}},
+        "777_POWER3",
+        1,
+    )
+
+    assert paths == [f"{good}.meta.json"]
+    assert recorded == {"name": "777_POWER3", "obs_id": 1, "paths": [str(good)]}
+
+
+def test_write_sidecars_empty(monkeypatch):
+    recorded = []
+    monkeypatch.setattr(schedule, "put_recorded", lambda *args: recorded.append(args))
+
     assert recmetadata.write_sidecars({}, "777_POWER3", 1) == []
     assert recmetadata.write_sidecars(None, "777_POWER3", 1) == []
+    assert recorded == []
 
 
-def test_write_sidecars_required_without_filename():
+def test_write_sidecars_required_without_filename(monkeypatch):
+    recorded = []
+    monkeypatch.setattr(schedule, "put_recorded", lambda *args: recorded.append(args))
+
     with pytest.raises(RuntimeError, match="no filename"):
         recmetadata.write_sidecars(
             {"drt1": {"status": "success"}},
@@ -80,6 +118,7 @@ def test_write_sidecars_required_without_filename():
             1,
             required=True,
         )
+    assert recorded == []
 
 
 def test_write_sidecars_required_without_recordings():
