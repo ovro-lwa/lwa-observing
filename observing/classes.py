@@ -74,8 +74,15 @@ class Observation:
         self.obs_dur = obs_dur
         assert(self.obs_dur > 0),'Duration cannot be negative'
         self.obs_mode = obs_mode
+        self.apply_tiptilt = False
     
-    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None, gain=None, az=None, alt=None):
+    def set_beam_props(self, ra, dec=None, obj_name=None, int_time=None, bw=None, freq1=None, freq2=None, gain=None, az=None, alt=None, apply_tiptilt=False):
+        """Set beam pointing properties for this observation.
+
+        ``apply_tiptilt`` is stored as a boolean. Command generation only
+        passes ``tiptilt=True`` to ``control_bf`` when this flag is true and
+        the observation is tracking.
+        """
 
         # overload obs_mode for some targets
         if obj_name is not None:
@@ -139,5 +146,7 @@ class Observation:
             self.freq1 = freq1
             self.freq2 = freq2
             self.gain = gain
+
+        self.apply_tiptilt = bool(apply_tiptilt)
 
         return

@@ -1,5 +1,7 @@
 import pytest
+import os
 import os.path
+import tempfile
 from observing import parsesdf
 import pandas as pd
 from observing.parsesdf import make_command
@@ -7,6 +9,10 @@ from observing.classes import ObsType, Session, Observation
 
 
 _install_dir = os.path.abspath(os.path.dirname(__file__))
+
+
+def _control_bf_commands(df):
+    return [c for c in df['command'] if isinstance(c, str) and c.startswith('con.control_bf')]
 
 def test_read():
     fn = os.path.join(_install_dir, 'test.sdf')
@@ -150,3 +156,81 @@ def test_make_command_script_nm():
                 ra = ra.split('(', 1)[-1]
                 dec = dec.split(')', 1)[0]
                 assert float(ra) == obs_ra.pop(0)
+
+
+def test_apply_tiptilt_absent_defaults_false():
+    fn = os.path.join(_install_dir, 'test.sdf')
+    d = parsesdf.sdf_to_dict(fn)
+    session, obs_list = parsesdf.make_obs_list(d)
+    assert all(obs.apply_tiptilt is False for obs in obs_list)
+    df = parsesdf.power_beam_obs(obs_list, session)
+    for cmd in _control_bf_commands(df):
+        assert 'tiptilt=' not in cmd
+
+
+def test_apply_tiptilt_true_on_tracking():
+    src = os.path.join(_install_dir, 'test.sdf')
+    with open(src) as fh:
+        text = fh.read()
+    text = text.replace('OBS_MODE        TRK_RADEC\n',
+                        'OBS_MODE        TRK_RADEC\nOBS_APPLY_TIPTILT True\n')
+    with tempfile.NamedTemporaryFile('w', suffix='.sdf', delete=False) as tmp:
+        tmp.write(text)
+        tmp_path = tmp.name
+    try:
+        d = parsesdf.sdf_to_dict(tmp_path)
+        session, obs_list = parsesdf.make_obs_list(d)
+        assert all(obs.apply_tiptilt is True for obs in obs_list)
+        assert all(obs.tracking for obs in obs_list)
+        df = parsesdf.power_beam_obs(obs_list, session)
+        bf_cmds = _control_bf_commands(df)
+        assert bf_cmds
+        assert any('tiptilt=True' in cmd for cmd in bf_cmds)
+    finally:
+        os.unlink(tmp_path)
+
+
+def test_apply_tiptilt_ignored_for_azalt():
+    sdf = """PI_ID            1
+PI_NAME          Tester
+
+PROJECT_ID       0
+SESSION_ID       1
+SESSION_MODE     POWER
+SESSION_DRX_BEAM       3
+CONFIG_FILE      /home/pipeline/proj/lwa-shell/mnc_python/config/lwa_config_calim.yaml
+
+OBS_ID          1
+OBS_START_MJD   60161
+OBS_START_MPM   3300000
+OBS_START       UTC 2023 08 05 00:55:00
+OBS_DUR         60000
+OBS_INT_TIME    100
+OBS_DUR+        00:01:00
+OBS_MODE        AZALT
+OBS_APPLY_TIPTILT True
+OBS_AZ          180.0
+OBS_ALT         45.0
+OBS_FREQ1       1161394218
+OBS_FREQ1+      53.000000009 MHz
+OBS_FREQ2       1599656187
+OBS_FREQ2+      73.000000010 MHz
+OBS_BW          7
+OBS_BW+         19.600 MHz
+"""
+    with tempfile.NamedTemporaryFile('w', suffix='.sdf', delete=False) as tmp:
+        tmp.write(sdf)
+        tmp_path = tmp.name
+    try:
+        d = parsesdf.sdf_to_dict(tmp_path)
+        session, obs_list = parsesdf.make_obs_list(d)
+        assert obs_list[0].apply_tiptilt is True
+        assert obs_list[0].tracking is False
+        df = parsesdf.power_beam_obs(obs_list, session)
+        bf_cmds = _control_bf_commands(df)
+        assert bf_cmds
+        for cmd in bf_cmds:
+            assert 'track=False' in cmd
+            assert 'tiptilt=True' not in cmd
+    finally:
+        os.unlink(tmp_path)

@@ -168,12 +168,15 @@ def submit_sdf(sdffile, asap, reset, timeout):
 @click.option('--dec', default=None, type=float, help='Dec of target (in degrees). Interpreted as Altitude (degrees) for AZALT obs-mode.')
 @click.option('--obj-name', default=None, type=str, help='Name of object to track (used as alternative to RA/Dec)')
 @click.option('--int-time', default=None, type=int, help='Integration time in milliseconds')
-def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time):
+@click.option('--tiptilt', is_flag=True, default=False, show_default=True,
+              help='Write OBS_APPLY_TIPTILT True on each observation')
+def create_sdf(sdffile, n_obs, sess_mode, beam_num, cal_dir, do_cal, obs_mode, obs_start, obs_dur, ra, dec, obj_name, int_time, tiptilt):
     """ Create an SDF file.
     """
 
     makesdf.create(sdffile, n_obs=n_obs, sess_mode=sess_mode, obs_mode=obs_mode, beam_num=beam_num, obs_start=obs_start,
-                   obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time, do_cal=do_cal, cal_dir=cal_dir)
+                   obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name, int_time=int_time, do_cal=do_cal, cal_dir=cal_dir,
+                   tiptilt=tiptilt)
 
 
 @cli.command()

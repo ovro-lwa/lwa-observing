@@ -176,7 +176,8 @@ def make_obs_list(inp:dict):
             else:
                 bw, freq1, freq2, gain = None, None, None, None
 
-            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2, gain=gain, az=az, alt=alt)
+            apply_tiptilt = eval(inp['OBSERVATIONS'][i].get('OBS_APPLY_TIPTILT', 'False'))
+            obs.set_beam_props(ra, dec, obj_name=obj_name, int_time=int_time, bw=bw, freq1=freq1, freq2=freq2, gain=gain, az=az, alt=alt, apply_tiptilt=apply_tiptilt)
             
         obs_list.append(obs)
     return session,obs_list
@@ -333,13 +334,14 @@ def power_beam_obs(obs_list, session, mode='buffer'):
             d.update({ts: power_start_dr(session, obs, "'now'", session_mode_name)})
 
         ts += recording_buffer/(24*3600)
+        tiptilt_kw = ", tiptilt=True" if (obs.apply_tiptilt and obs.tracking) else ""
         if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
             targetname = obs.obj_name
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur/1e3)+pointing_buffer})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur/1e3)+pointing_buffer}{tiptilt_kw})"
         elif obs.ra is not None and obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur/1e3)+pointing_buffer})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur/1e3)+pointing_buffer}{tiptilt_kw})"
         elif obs.az is not None and obs.alt is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.az},{obs.alt}), coordtype='azel', track=False, duration={(obs.obs_dur)/1e3+pointing_buffer})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.az},{obs.alt}), coordtype='azel', track=False, duration={(obs.obs_dur)/1e3+pointing_buffer}{tiptilt_kw})"
             
         d.update({ts:cmd})
 
@@ -435,13 +437,14 @@ def volt_beam_obs(obs_list, session, mode='buffer'):
             d.update({ts: volt_start_dr(session, obs, t0, session_mode_name, command_suffix)})
 
         ts += (recording_buffer)/(24*3600)
+        tiptilt_kw = ", tiptilt=True" if (obs.apply_tiptilt and obs.tracking) else ""
         if obs.ra is None and obs.dec is None and obs.az is None and obs.alt is None:
             targetname = obs.obj_name
-            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, targetname='{targetname}', track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3}{tiptilt_kw})"
         elif obs.ra is not None and obs.dec is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.ra/15},{obs.dec}), track={obs.tracking}, duration={(obs.obs_dur+pointing_buffer)/1e3}{tiptilt_kw})"
         elif obs.az is not None and obs.alt is not None:
-            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.az},{obs.alt}), coordtype='azel', track=False, duration={(obs.obs_dur+pointing_buffer)/1e3})"
+            cmd = f"con.control_bf(num = {session.beam_num}, coord = ({obs.az},{obs.alt}), coordtype='azel', track=False, duration={(obs.obs_dur+pointing_buffer)/1e3}{tiptilt_kw})"
 
         d.update({ts:cmd})
 
