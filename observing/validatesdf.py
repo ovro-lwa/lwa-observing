@@ -12,10 +12,14 @@ import shutil
 import traceback
 import uuid
 
+from astropy import coordinates
 from astropy.time import Time
 
 from observing import parsesdf
 from observing.classes import ObsType, EphemModes
+
+# Names control_bf resolves via solar-system ephemerides (see Observation.set_beam_props)
+EPHEM_TARGET_NAMES = frozenset({'sun', 'jupiter', 'moon'})
 
 BEAM_TYPES = (ObsType.power, ObsType.volt, ObsType.voltraw)
 VALID_BEAMS = {ObsType.power: range(1, 17), ObsType.volt: range(1, 2), ObsType.voltraw: range(1, 2)}
@@ -358,6 +362,10 @@ def _obs_start_mjd(obs, label, report):
 
 def _check_target(obs, mode, label, report):
     """ Beam observations need a name, RA/Dec, or Az/Alt. Returns a short description.
+
+    When pointing depends on OBS_TARGET alone (no RA/Dec or Az/Alt), the name must be
+    resolvable the same way create-sdf and control_bf expect: Sun/Jupiter/Moon, or
+    SkyCoord.from_name (Sesame).
     """
 
     name = obs.get('OBS_TARGET')
@@ -386,7 +394,24 @@ def _check_target(obs, mode, label, report):
         report.error(f"{label}: OBS_RA and OBS_DEC must be given together")
     if name in (None, 'None'):
         report.error(f"{label}: no target. Set OBS_TARGET, OBS_RA/OBS_DEC, or OBS_AZ/OBS_ALT")
+        return name
+    if not _target_name_parsable(name):
+        report.error(f"{label}: OBS_TARGET {name!r} could not be parsed as a sky position. "
+                     "Set OBS_RA/OBS_DEC, or use Sun/Jupiter/Moon or a name SkyCoord.from_name can resolve")
     return name
+
+
+def _target_name_parsable(name):
+    """ True if control_bf can use this OBS_TARGET as targetname without coordinates.
+    """
+
+    if isinstance(name, str) and name.lower() in EPHEM_TARGET_NAMES:
+        return True
+    try:
+        coordinates.SkyCoord.from_name(name)
+        return True
+    except Exception:
+        return False
 
 
 def _check_schedule(sched, report, now):

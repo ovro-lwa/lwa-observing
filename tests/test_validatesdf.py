@@ -30,6 +30,15 @@ def power_sdf(tmp_path, obs_blocks):
     return write_sdf(tmp_path, text)
 
 
+def name_only_power_sdf(tmp_path, obj_name):
+    """ POWER beam SDF with OBS_TARGET only (no OBS_RA/OBS_DEC); pointing uses targetname.
+    """
+    text = makesdf.make_session_preamble(123, validatesdf.ObsType.power, beam_num=3, config_dir=TEST_SDF)
+    text += makesdf.make_obs_block(1, '2030-01-01T00:00:00', 60000, ra=None, dec=None, obj_name=obj_name,
+                                   integration_time=100, obs_mode=EphemModes.trk_radec) + '\n'
+    return write_sdf(tmp_path, text)
+
+
 def test_valid_sdf():
     report = validatesdf.validate(TEST_SDF, now=BEFORE_TEST_SDF)
     assert report.ok, report.errors
@@ -157,3 +166,40 @@ def test_spaced_observations_no_late_warning(tmp_path):
     report = validatesdf.validate(fn, now=Time('2029-12-31T00:00:00'))
     assert report.ok, report.errors
     assert not any('late' in msg for msg in report.warnings)
+
+
+def test_target_name_unparsable(tmp_path, monkeypatch):
+    def boom(name):
+        raise ValueError('not found')
+
+    monkeypatch.setattr(validatesdf.coordinates.SkyCoord, 'from_name', boom)
+    fn = name_only_power_sdf(tmp_path, 'not-a-real-source-xyz')
+    report = validatesdf.validate(fn, now=Time('2029-12-31T00:00:00'))
+    assert not report.ok
+    assert any('could not be parsed' in msg for msg in report.errors)
+
+
+def test_target_name_parsable(tmp_path, monkeypatch):
+    monkeypatch.setattr(validatesdf.coordinates.SkyCoord, 'from_name', lambda name: object())
+    fn = name_only_power_sdf(tmp_path, '3C196')
+    report = validatesdf.validate(fn, now=Time('2029-12-31T00:00:00'))
+    assert report.ok, report.errors
+    assert report.observations[0]['target'] == '3C196'
+
+
+def test_target_name_sun_without_coords(tmp_path):
+    fn = name_only_power_sdf(tmp_path, 'Sun')
+    report = validatesdf.validate(fn, now=Time('2029-12-31T00:00:00'))
+    assert report.ok, report.errors
+
+
+def test_coords_skip_name_lookup(tmp_path, monkeypatch):
+    """ When OBS_RA/OBS_DEC are set, pointing does not use the name; do not require Sesame.
+    """
+    def boom(name):
+        raise AssertionError('should not resolve')
+
+    monkeypatch.setattr(validatesdf.coordinates.SkyCoord, 'from_name', boom)
+    fn = power_sdf(tmp_path, [('2030-01-01T00:00:00', 60000, 30., 20.)])
+    report = validatesdf.validate(fn, now=Time('2029-12-31T00:00:00'))
+    assert report.ok, report.errors
