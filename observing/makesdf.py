@@ -14,8 +14,10 @@ logger = logging.getLogger('observing')
 
 def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home/pipeline/caltables/latest', do_cal=False,
            pi_id=None, pi_name=None, config_file=None, n_obs=1, obs_mode=None, obs_start=None, obs_dur=None, ra=None,
-           dec=None, obj_name=None, int_time=None):
+           dec=None, obj_name=None, int_time=None, tiptilt=False):
     """ Create a file out_name as an SDF
+    ra and dec are in degrees (ra is converted to hours in the SDF). For obs_mode AZALT, ra and dec are
+    interpreted as azimuth and altitude in degrees.
     """
 
     sdf_text = ''
@@ -68,12 +70,12 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
         raise Exception("Couldn't make the session preamble")
     
     obs_text = make_oneobs(1, sess_mode=sess_mode, obs_mode=obs_mode, obs_start=obs_start, obs_dur=obs_dur, ra=ra, dec=dec, obj_name=obj_name,
-                           int_time=int_time)
+                           int_time=int_time, tiptilt=tiptilt)
     sdf_text += obs_text
 
     # after first, all others will prompt for input
     for obs_count in range(2, n_obs+1):
-        obs_text = make_oneobs(obs_count, sess_mode=sess_mode, obs_mode=obs_mode, obs_dur=obs_dur, int_time=int_time)
+        obs_text = make_oneobs(obs_count, sess_mode=sess_mode, obs_mode=obs_mode, obs_dur=obs_dur, int_time=int_time, tiptilt=tiptilt)
         sdf_text += obs_text
         print(obs_text)
         print("Add another observation? (Y/N)")
@@ -88,7 +90,7 @@ def create(out_name, sess_id=None, sess_mode=None, beam_num=None, cal_dir='/home
 
 
 
-def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None, obj_name=None, int_time=None, az=None, alt=None):
+def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_dur=None, ra=None, dec=None, obj_name=None, int_time=None, az=None, alt=None, tiptilt=False):
     """ Create string for one observation
     """
 
@@ -163,7 +165,7 @@ def make_oneobs(obs_count, sess_mode=None, obs_mode=None, obs_start=None, obs_du
 
     if int_time is not None:
         assert int_time <= 1024, "Integration time must be less than 1024 ms"
-    obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode, az=az, alt=alt)
+    obs_text = make_obs_block(obs_count, obs_start, obs_dur, ra, dec, obj_name, int_time, obs_mode, az=az, alt=alt, tiptilt=tiptilt)
     return obs_text
 
 
@@ -189,9 +191,10 @@ def make_session_preamble(session_id, session_mode, pi_id = 0, pi_name:str = 'Ob
     return lines
 
 
-def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_name = None, integration_time = 1, obs_mode = None, az = None, alt = None):
+def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_name = None, integration_time = 1, obs_mode = None, az = None, alt = None, tiptilt=False):
     """ Create an observation block for the SDF
     Note that RA for the function is in degrees, but the SDF standard uses hours (converted internally).
+    When ``tiptilt`` is true, writes ``OBS_APPLY_TIPTILT True``; otherwise omits the key.
     """
 
     t = Time(start_time, format = 'isot')
@@ -216,6 +219,9 @@ def make_obs_block(obs_id, start_time:str, duration, ra = None, dec = None, obj_
 
     if obs_mode != None:
         lines += f"OBS_MODE        {obs_mode.value}\n"
+
+    if tiptilt:
+        lines += "OBS_APPLY_TIPTILT True\n"
 
     if ra is not None:
         lines += f"OBS_RA          %.9f\n" % (ra / 15)  # SDF standard defines OBS_RA is in hours not degrees

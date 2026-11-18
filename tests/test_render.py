@@ -2,7 +2,22 @@ import os
 import pytest
 import os.path
 import tempfile
-from observing import makesdf, parsesdf
+from observing import makesdf, parsesdf, classes
+
+
+def test_make_obs_block_tiptilt_true():
+    text = makesdf.make_obs_block(
+        1, '2024-02-08T17:18:19', 10000, ra=0.0, dec=90.0, obj_name='NCP',
+        integration_time=100, obs_mode=classes.EphemModes('TRK_RADEC'), tiptilt=True)
+    assert 'OBS_APPLY_TIPTILT True' in text
+
+
+def test_make_obs_block_tiptilt_absent_by_default():
+    text = makesdf.make_obs_block(
+        1, '2024-02-08T17:18:19', 10000, ra=0.0, dec=90.0, obj_name='NCP',
+        integration_time=100, obs_mode=classes.EphemModes('TRK_RADEC'))
+    assert 'OBS_APPLY_TIPTILT' not in text
+
 
 def test_make():
     outname = tempfile.mktemp(suffix='.sdf')

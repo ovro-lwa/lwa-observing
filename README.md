@@ -15,6 +15,7 @@ Code to use and run observations with the OVRO-LWA.
 5. Calibrated beams -- Beamforming observations should be schedulable such that they apply good calibration for the time of observation (note: this means making and applying new tables across day/night boundaries).
 6. Automated scheduling -- It should be possible for an automated process (a script in a loop) to decide to submit an observation. An important application of this is ASAP beamformed observations of FRBs detected by DSA-110.
 
+<<<<<<< Updated upstream
 ## Scheduler service
 
 The scheduler must use only packages from the deployment Conda environment.
@@ -43,3 +44,10 @@ systemctl --user show scheduler.service \
 
 The output should show an active service, `PYTHONNOUSERSITE=1`, and the
 deployment Python command with the `-s` flag.
+||||||| Stash base
+=======
+## SDF tip-tilt
+
+Optional observation key `OBS_APPLY_TIPTILT True` requests tip-tilt correction on tracking POWER/VOLT beam observations (`control_bf(..., tiptilt=True)`). If the key is absent or `False`, tip-tilt is not applied. Tip-tilt is ignored for non-tracking modes such as `AZALT`. Requires an `mnc_python` build that supports the `tiptilt` argument on `control_bf`. Create SDFs with `lwaobserving create-sdf --tiptilt ...`.
+
+>>>>>>> Stashed changes

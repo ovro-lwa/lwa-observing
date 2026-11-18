@@ -8,6 +8,9 @@ from observing import obsstate, parsesdf
 logger = logging.getLogger('observing')
 ls = dsa_store.DsaStore()
 
+RECORDINGS_KEY = '/mon/observing/recordings'
+RECORDED_SESSION_LIMIT = 5
+
 
 def create_dict(sched):
     """ Use schedule to create dict to load to etcd
@@ -37,41 +40,67 @@ def put_sched(sched=None):
         logger.info("Resetting submitted/scheduled info in etcd")
         sched_dict = {}
         ls.put_dict('/mon/observing/submitted', {})
+        ls.put_dict(RECORDINGS_KEY, {})
     ls.put_dict('/mon/observing/schedule', sched_dict)
 
 
+def _observation_end_mjd(obs):
+    """ Return the end MJD of one SDF observation block, or None if it has no start.
+    """
+
+    try:
+        start = int(obs['OBS_START_MJD']) + int(obs['OBS_START_MPM']) * 1e-3 / 86400.0
+        return start + int(obs['OBS_DUR']) * 1e-3 / 86400.0
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def sdfdict_keys_to_keep(sdfdict, now_mjd, limit=10):
+    """ Keys to retain in /mon/observing/sdfdict.
+
+    Sessions that have not finished are always kept. The recorder sidecar is
+    written when the voltage recording is commanded, which can be days after
+    submit, and it reads this dict. Finished sessions are capped at `limit`
+    per mode-beam, preferring the highest session id.
+    """
+
+    keep = set()
+    finished = []
+    for key, entry in sdfdict.items():
+        ends = [_observation_end_mjd(obs) for obs in entry.get('OBSERVATIONS', {}).values()]
+        ends = [end for end in ends if end is not None]
+        if not ends or max(ends) >= now_mjd:
+            keep.add(key)
+        else:
+            finished.append(key)
+
+    by_mode = {}
+    for key in finished:
+        mode = key.split('_', 1)[1] if '_' in key else key
+        by_mode.setdefault(mode, []).append(key)
+    for keys in by_mode.values():
+        keys.sort(key=lambda key: int(key.split('_', 1)[0]) if key.split('_', 1)[0].isdigit() else 0,
+                  reverse=True)
+        keep.update(keys[:limit])
+    return keep
+
+
 def put_dict(filename, limit=10):
-    """ Parses SDF and puts dict in etcd for later retrieval by data recorders
-    limit defines the number of sessions in a given mode-beam that should be retained in sdfdict.
+    """ Parses SDF and puts dict in etcd for later retrieval by data recorders.
+    limit is how many finished sessions to retain per mode-beam. Sessions that
+    have not ended are not counted against that limit.
     """
 
     dd = parsesdf.sdf_to_dict(filename)
     session_mode_name = f"{dd['SESSION']['SESSION_ID']}_{dd['SESSION']['SESSION_MODE']}"
     if 'SESSION_DRX_BEAM' in dd['SESSION']:
-        session_mode_name += dd['SESSION']['SESSION_DRX_BEAM']
+        session_mode_name += str(dd['SESSION']['SESSION_DRX_BEAM'])
 
-    dd0 = ls.get_dict('/mon/observing/sdfdict')
-
-    # clear out old entries
-    mode_set = set([key.split('_')[1] for key in dd0])  # all unique modes used
-    sortid = sorted(dd0.keys(), reverse=True, key=lambda x: int(x.split('_')[0]))  # sort by session_id
-    keep = []
-    limit = 10
-    for mode in mode_set:
-        i = 0
-        for Id in sortid:
-            if mode in Id:
-                i+=1
-                keep.append(Id)
-                if i > limit:
-                    break
-    if len(dd0) < len(keep):
+    dd0 = ls.get_dict('/mon/observing/sdfdict') or {}
+    keep = sdfdict_keys_to_keep(dd0, time.Time.now().mjd, limit=limit)
+    if len(keep) < len(dd0):
         logger.info(f'sdfdict reduced from {len(dd0)} to {len(keep)}.')
-        
-    dd0 = {k:v for k, v in dd0.items() if k in keep}
-    
-    if dd0 is None:
-        dd0 = {}
+    dd0 = {k: v for k, v in dd0.items() if k in keep}
     dd0.update({session_mode_name: dd})
     ls.put_dict('/mon/observing/sdfdict', dd0)
 
@@ -103,31 +132,104 @@ def get_sched():
     return scheduled, active
 
 
-def is_conflicted(sched):
-    """ Check if sched is requesting a beam that is already scheduled or submitted
+def find_conflicts(sched):
+    """ Return descriptions of scheduled or submitted sessions that use the same mode/beam during sched
     """
 
     scheduled, active = get_sched()
     sched_dict = create_dict(sched)
 
+    conflicts = []
     # iterate over sched_dict keys of unique observing modes to get values of (start, stop)
     for kk,vv in sched_dict.items():
-
-        # if observing mode is scheduled, compare (start, stop)
-        if kk in scheduled.keys():
-            for trange in scheduled[kk].values():
+        for state, existing in (('scheduled', scheduled), ('active', active)):
+            if kk not in existing.keys():
+                continue
+            # if observing mode is scheduled or active, compare (start, stop)
+            for name, trange in existing[kk].items():
                 for (t0, t1) in vv.values():
                     if (t0 >= trange[0] and t0 <= trange[1]) or (t1 >= trange[0] and t1 <= trange[1]):
-                        return True
+                        conflicts.append(f"{state} session {name} (MJD {trange[0]:.6f} to {trange[1]:.6f})")
 
-        # if observing mode is active, compare (start, stop)
-        if kk in active.keys():
-            for trange in active[kk].values():
-                for (t0, t1) in vv.values():
-                    if (t0 >= trange[0] and t0 <= trange[1]) or (t1 >= trange[0] and t1 <= trange[1]):
-                        return True
+    return conflicts
 
-    return False
+
+def is_conflicted(sched):
+    """ Check if sched is requesting a beam that is already scheduled or submitted
+    """
+
+    conflicts = find_conflicts(sched)
+    if conflicts:
+        logger.warning(f"Conflicts with {', '.join(conflicts)}")
+    return bool(conflicts)
+
+
+def put_recorded(session_mode_name, obs_id, paths, limit=RECORDED_SESSION_LIMIT):
+    """ Remember data paths from one successful beamforming recording.
+
+    /mon/observing/recordings keeps the most recently recorded sessions, up to
+    limit. Another observation of a stored session updates that session and
+    moves it to the front. A failure to reach etcd is logged and ignored.
+    """
+
+    try:
+        current = ls.get_dict(RECORDINGS_KEY) or {}
+        stored = [session for session in current.get('sessions') or [] if isinstance(session, dict)]
+        previous = next(
+            (session for session in stored if session.get('session_mode_name') == session_mode_name),
+            None,
+        )
+        observations = dict(previous.get('observations') or {}) if previous else {}
+        observations[str(obs_id)] = [str(path) for path in paths]
+        updated = {'session_mode_name': session_mode_name, 'observations': observations}
+        older = [session for session in stored if session.get('session_mode_name') != session_mode_name]
+        ls.put_dict(RECORDINGS_KEY, {'sessions': [updated, *older][:limit]})
+    except Exception as exc:
+        logger.warning(f"Could not record data filenames for {session_mode_name} OBS_ID {obs_id}: {exc}")
+
+
+def get_recorded():
+    """ Sessions in /mon/observing/recordings, most recent first.
+    """
+
+    recorded = ls.get_dict(RECORDINGS_KEY) or {}
+    return [session for session in recorded.get('sessions') or []
+            if isinstance(session, dict) and session.get('session_mode_name')]
+
+
+def _mode_of(session_mode_name):
+    return session_mode_name.split('_', 1)[1] if '_' in session_mode_name else session_mode_name
+
+
+def _obs_id_key(obs_id):
+    text = str(obs_id)
+    return (0, int(text)) if text.isdigit() else (1, text)
+
+
+def _log_recorded(mode=None):
+    """ Log the Last recorded section. mode limits lines to one schedule mode.
+    """
+
+    sessions = get_recorded()
+    if mode is not None:
+        sessions = [session for session in sessions if _mode_of(session['session_mode_name']) == mode]
+        if not sessions:
+            logger.info(f"Mode {mode} not in recorded history.")
+            return
+    elif not sessions:
+        return
+
+    logger.info("Last recorded:")
+    for session in sessions:
+        logger.info(f"\tSession: {session['session_mode_name']}")
+        observations = session.get('observations') or {}
+        for obs_id in sorted(observations, key=_obs_id_key):
+            paths = observations[obs_id]
+            if isinstance(paths, str):
+                paths = [paths]
+            for path in paths or []:
+                logger.info(f"\t\tOBS {obs_id}: {path}")
+    logger.info('\n')
 
 
 def print_sched(mode=None):
@@ -171,6 +273,8 @@ def print_sched(mode=None):
             for kk2,vv2 in dd2[mode].items():
                 logger.info(f"\tSession: {kk2}. Start, Stop: {vv2}")
 
+    _log_recorded(mode)
+
 
 def sched_update(sched, mode='buffer'):
     """ Take a schedule or list of schedules, concatenate and sort them.
@@ -188,7 +292,9 @@ def sched_update(sched, mode='buffer'):
                     if s0.index[0] > time.Time.now().mjd:
                         include.append(s0)
                     else:
-                        logger.warning(f"Removing session starting at {s0.index[0]}")
+                        late_s = (time.Time.now().mjd - s0.index[0]) * 24 * 3600
+                        logger.warning(f"Removing session {s0.session_mode_name.iloc[0]}: first command at MJD "
+                                       f"{s0.index[0]} was due {late_s:.0f} s ago (buffer mode drops started sessions)")
                         try:
                             obsstate.update_session(int(s0.session_id.iloc[0]), 'skipped')
                         except Exception as exc:
@@ -237,13 +343,22 @@ def runrow(rows):
 #        elif mjd - time.Time.now().mjd < -10/(24*3600):
 #            logger.warning(f"Skipping command at MJD {mjd}...")
 #            continue
+
+        t_start = time.Time.now().mjd
+        late_s = (t_start - mjd) * 24 * 3600
+        if late_s > 2:
+            logger.warning(f"Session {row.session_mode_name}: running command {late_s:.1f} s late: {row.command}")
         else:
             logger.info(f"Submitting command:  {row.command}")
 
         try:
             exec(row.command)
         except Exception as exc:
-            logger.warning(exc)
+            logger.exception(f"Session {row.session_mode_name}: command failed: {row.command}")
+
+        elapsed_s = (time.Time.now().mjd - t_start) * 24 * 3600
+        if elapsed_s > 5:
+            logger.info(f"Session {row.session_mode_name}: command took {elapsed_s:.1f} s: {row.command}")
 
     # if loop completes, then set session to completed
     try:
